@@ -724,10 +724,7 @@ onBeforeUnmount(() => {
                 <button
                   type="button"
                   class="dropdown-item"
-                  @click="
-                    addSplineRowBelow(splineContextMenu.rowIndex)
-                    hideSplineContextMenu()
-                  "
+                  @click="addSplineRowBelow(splineContextMenu.rowIndex); hideSplineContextMenu()"
                 >
                   <i class="fa-solid fa-plus me-2"></i>Add Row Below
                 </button>
@@ -735,10 +732,7 @@ onBeforeUnmount(() => {
                   type="button"
                   class="dropdown-item text-danger"
                   :disabled="splineRows.length <= 1"
-                  @click="
-                    deleteSplineRow(splineContextMenu.rowIndex)
-                    hideSplineContextMenu()
-                  "
+                  @click="deleteSplineRow(splineContextMenu.rowIndex); hideSplineContextMenu()"
                 >
                   <i class="fa-solid fa-trash me-2"></i>Delete Row
                 </button>
