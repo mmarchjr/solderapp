@@ -65,8 +65,8 @@
 <script setup>
 import { ref, defineAsyncComponent } from 'vue'
 import { useDrillStore } from '@/stores/store'
-import UploadDrillFile from '@/components/UploadDrillFile.vue'
-const ImportWizard = defineAsyncComponent(() => import('@/components/ImportWizard.vue'))
+import UploadDrillFile from '@/components/import/UploadDrillFile.vue'
+const ImportWizard = defineAsyncComponent(() => import('@/components/import/ImportWizard.vue'))
 import { useFileHandlers } from '@/composables/useFileHandlers'
 const { saveProject } = useFileHandlers()
 

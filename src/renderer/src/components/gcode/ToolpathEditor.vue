@@ -505,15 +505,15 @@ import {
   nextTick,
   defineAsyncComponent
 } from 'vue'
-const GcodeSimulator = defineAsyncComponent(() => import('@/components/GcodeSimulator.vue'))
-const ImportWizard = defineAsyncComponent(() => import('@/components/ImportWizard.vue'))
-import ProfileManager from '@/components/ProfileManager.vue'
+const GcodeSimulator = defineAsyncComponent(() => import('@/components/gcode/GcodeSimulator.vue'))
+const ImportWizard = defineAsyncComponent(() => import('@/components/import/ImportWizard.vue'))
+import ProfileManager from '@/components/machine/ProfileManager.vue'
 import { useDrillStore } from '@/stores/store'
 import { useFileHandlers } from '@/composables/useFileHandlers'
 import { useGcodeGenerator } from '@/composables/useGcodeGenerator'
 import { usePrinterControl } from '@/composables/usePrinterControl'
-import JogWheel from './JogWheel.vue'
-import JogBar from './JogBar.vue'
+import JogWheel from '@/components/jog/JogWheel.vue'
+import JogBar from '@/components/jog/JogBar.vue'
 const { parseDrillFile, parseProjectFile, saveProject } = useFileHandlers()
 const { generateGcode, saveGcodeFile, getSolderPoints, checkForRiskyLeftMoves } =
   useGcodeGenerator()

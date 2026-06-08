@@ -2,10 +2,10 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDrillStore } from '@/stores/store'
 import { usePrinterControl } from '@/composables/usePrinterControl'
-import JogWheel from './JogWheel.vue'
-import JogBar from './JogBar.vue'
+import JogWheel from '@/components/jog/JogWheel.vue'
+import JogBar from '@/components/jog/JogBar.vue'
 import PrintConsole from './PrintConsole.vue'
-import SerialPortPicker from './SerialPortPicker.vue'
+import SerialPortPicker from '@/components/machine/SerialPortPicker.vue'
 
 const props = defineProps({
   selectedTool: { type: String, default: null }

@@ -1,10 +1,10 @@
 <script setup>
 import { ref, provide } from 'vue'
-import Header from '@/components/Header.vue'
-import ToolpathEditor from '@/components/ToolpathEditor.vue'
-import MachineConfig from '@/components/MachineConfig.vue'
-import PrintTab from '@/components/PrintTab.vue'
-import PrintStatus from '@/components/PrintStatus.vue'
+import Header from '@/components/ui/Header.vue'
+import ToolpathEditor from '@/components/gcode/ToolpathEditor.vue'
+import MachineConfig from '@/components/machine/MachineConfig.vue'
+import PrintTab from '@/components/printing/PrintTab.vue'
+import PrintStatus from '@/components/printing/PrintStatus.vue'
 import { useDrillStore } from '@/stores/store'
 import { usePrinterControl } from '@/composables/usePrinterControl'
 

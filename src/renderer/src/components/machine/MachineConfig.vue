@@ -1,8 +1,8 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import ProfileManager from './ProfileManager.vue'
-import GcodeEditor from './GcodeEditor.vue'
-import PadAreaMap from './PadAreaMap.vue'
+import GcodeEditor from '@/components/gcode/GcodeEditor.vue'
+import PadAreaMap from '@/components/ui/PadAreaMap.vue'
 
 import { useDrillStore } from '@/stores/store'
 
