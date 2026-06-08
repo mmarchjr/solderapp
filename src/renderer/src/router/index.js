@@ -1,9 +1,8 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
-const history = window.location.protocol === 'file:'
-  ? createWebHashHistory()
-  : createWebHistory('/')
+const history =
+  window.location.protocol === 'file:' ? createWebHashHistory() : createWebHistory('/')
 
 const router = createRouter({
   history,
@@ -12,9 +11,9 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: { pageClass: 'toolpath-editor-page' },
-    },
-  ],
+      meta: { pageClass: 'toolpath-editor-page' }
+    }
+  ]
 })
 
 // On first page load, check if we were redirected

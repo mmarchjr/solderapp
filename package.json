@@ -1,6 +1,6 @@
 {
   "name": "solderapp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -34,6 +34,7 @@
     "occt-import-js": "^0.0.23",
     "pinia": "^3.0.1",
     "pinia-plugin-persistedstate": "^4.2.0",
+    "serialport": "^13.0.0",
     "three": "^0.174.0",
     "vue-router": "^4.5.0"
   },

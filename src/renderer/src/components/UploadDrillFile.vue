@@ -1,9 +1,9 @@
 <template>
   <div>
-    <div
-      class="open-ui"
-    >
-      <button class="btn btn-outline-light btn-sm open-btn" @click="triggerFilePicker"><i class="fa-solid fa-file-arrow-up me-2"></i> Open File</button>
+    <div class="open-ui">
+      <button class="btn btn-outline-light btn-sm open-btn" @click="triggerFilePicker">
+        <i class="fa-solid fa-file-arrow-up me-2"></i> Open File
+      </button>
 
       <!-- Hidden File Input -->
       <input
@@ -13,65 +13,56 @@
         @change="handleFiles"
         accept=".drl,.txt,.json,.zip,.gbr,.gtl,.gbl,.gts,.gbs,.gto,.gbo,.gtp,.gbp,.gko,.gml,.gm1"
       />
-
     </div>
   </div>
 </template>
 
-
-
 <script setup>
-import { ref } from "vue";
+import { ref } from 'vue'
 // import { useDrillStore } from "@/stores/drillStore";
-import { useFileHandlers } from "@/composables/useFileHandlers";
-const { parseDrillFile, parseProjectFile } = useFileHandlers();
+import { useFileHandlers } from '@/composables/useFileHandlers'
+const { parseDrillFile, parseProjectFile } = useFileHandlers()
 
-const emit = defineEmits(["openZip"]);
+const emit = defineEmits(['openZip'])
 
 // const drillStore = useDrillStore();
-const fileInput = ref(null);
+const fileInput = ref(null)
 
 // const inchesToMm = (inches) => Math.round(inches * 25.4 * 100) / 100;
 
 const handleFiles = (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+  const file = event.target.files?.[0]
+  if (!file) return
 
-  const ext = file.name.split('.').pop().toLowerCase();
+  const ext = file.name.split('.').pop().toLowerCase()
   if (ext === 'json') {
-    parseProjectFile(file);
+    parseProjectFile(file)
   } else if (ext === 'zip') {
-    emit("openZip", file);
+    emit('openZip', file)
   } else {
-    parseDrillFile(file);
+    parseDrillFile(file)
   }
 
-  event.target.value = "";
-};
-
+  event.target.value = ''
+}
 
 const triggerFilePicker = () => {
   if (fileInput.value) {
-    fileInput.value.value = ""; // ✅ Clear before opening
-    fileInput.value.click();
+    fileInput.value.value = '' // ✅ Clear before opening
+    fileInput.value.click()
   }
-};
-
+}
 </script>
 
 <style>
-.open-ui{
-  color:#FFF;
+.open-ui {
+  color: #fff;
 }
 
-.open-btn{
+.open-btn {
   height: 60px !important;
-    font-size: 1.25rem !important;
-    padding: 0rem 1rem !important;
-    --bs-btn-border-width: 0px !important;
-
-    
+  font-size: 1.25rem !important;
+  padding: 0rem 1rem !important;
+  --bs-btn-border-width: 0px !important;
 }
-
-
 </style>

@@ -1,99 +1,102 @@
-import { useDrillStore } from "@/stores/store";
+import { useDrillStore } from '@/stores/store'
 
 export function useGcodeGenerator() {
-  const drillStore = useDrillStore();
+  const drillStore = useDrillStore()
 
   function interpolateSpline(curve, padArea) {
-    if (!curve || curve.length === 0) return 0;
+    if (!curve || curve.length === 0) return 0
 
-    const sorted = [...curve].sort((a, b) => a.area - b.area);
-    if (sorted.length === 1) return sorted[0].value;
+    const sorted = [...curve].sort((a, b) => a.area - b.area)
+    if (sorted.length === 1) return sorted[0].value
 
-    const xs = sorted.map(p => p.area);
-    const ys = sorted.map(p => p.value);
-    const n = xs.length;
+    const xs = sorted.map((p) => p.area)
+    const ys = sorted.map((p) => p.value)
+    const n = xs.length
 
     // Linear fallback for 2 points
     if (n === 2) {
-      const slope = (ys[1] - ys[0]) / (xs[1] - xs[0]);
-      if (padArea <= xs[0]) return ys[0] + slope * (padArea - xs[0]);
-      if (padArea >= xs[1]) return ys[1] + slope * (padArea - xs[1]);
-      return ys[0] + slope * (padArea - xs[0]);
+      const slope = (ys[1] - ys[0]) / (xs[1] - xs[0])
+      if (padArea <= xs[0]) return ys[0] + slope * (padArea - xs[0])
+      if (padArea >= xs[1]) return ys[1] + slope * (padArea - xs[1])
+      return ys[0] + slope * (padArea - xs[0])
     }
 
-    const h = [];
-    for (let i = 0; i < n - 1; i++) h[i] = xs[i + 1] - xs[i];
+    const h = []
+    for (let i = 0; i < n - 1; i++) h[i] = xs[i + 1] - xs[i]
 
-    const alpha = new Array(n).fill(0);
+    const alpha = new Array(n).fill(0)
     for (let i = 1; i < n - 1; i++) {
-      alpha[i] = (3 / h[i]) * (ys[i + 1] - ys[i]) - (3 / h[i - 1]) * (ys[i] - ys[i - 1]);
+      alpha[i] = (3 / h[i]) * (ys[i + 1] - ys[i]) - (3 / h[i - 1]) * (ys[i] - ys[i - 1])
     }
 
-    const l = new Array(n).fill(0);
-    const mu = new Array(n).fill(0);
-    const z = new Array(n).fill(0);
-    const m = new Array(n).fill(0);
+    const l = new Array(n).fill(0)
+    const mu = new Array(n).fill(0)
+    const z = new Array(n).fill(0)
+    const m = new Array(n).fill(0)
 
-    l[0] = 1;
+    l[0] = 1
     for (let i = 1; i < n - 1; i++) {
-      l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1];
-      mu[i] = h[i] / l[i];
-      z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
+      l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1]
+      mu[i] = h[i] / l[i]
+      z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i]
     }
-    l[n - 1] = 1;
+    l[n - 1] = 1
 
     for (let j = n - 2; j >= 0; j--) {
-      m[j] = z[j] - mu[j] * m[j + 1];
+      m[j] = z[j] - mu[j] * m[j + 1]
     }
 
     // Linear extrapolation beyond endpoints
     if (padArea <= xs[0]) {
-      const slope = (ys[1] - ys[0]) / h[0];
-      return ys[0] + slope * (padArea - xs[0]);
+      const slope = (ys[1] - ys[0]) / h[0]
+      return ys[0] + slope * (padArea - xs[0])
     }
     if (padArea >= xs[n - 1]) {
-      const slope = (ys[n - 1] - ys[n - 2]) / h[n - 2];
-      return ys[n - 1] + slope * (padArea - xs[n - 1]);
+      const slope = (ys[n - 1] - ys[n - 2]) / h[n - 2]
+      return ys[n - 1] + slope * (padArea - xs[n - 1])
     }
 
-    let i = 0;
+    let i = 0
     for (; i < n - 2; i++) {
-      if (padArea < xs[i + 1]) break;
+      if (padArea < xs[i + 1]) break
     }
 
-    const hi = h[i] || (xs[i + 1] - xs[i]);
-    const a = (xs[i + 1] - padArea) / hi;
-    const b = (padArea - xs[i]) / hi;
+    const hi = h[i] || xs[i + 1] - xs[i]
+    const a = (xs[i + 1] - padArea) / hi
+    const b = (padArea - xs[i]) / hi
 
-    return a * ys[i] + b * ys[i + 1] +
-      ((a * a * a - a) * m[i] + (b * b * b - b) * m[i + 1]) * (hi * hi) / 6;
+    return (
+      a * ys[i] +
+      b * ys[i + 1] +
+      (((a * a * a - a) * m[i] + (b * b * b - b) * m[i + 1]) * (hi * hi)) / 6
+    )
   }
 
   function getPadArea(point) {
-    const diameter = parseFloat(point.size);
-    if (isNaN(diameter) || diameter <= 0) return 0;
-    return Math.PI * Math.pow(diameter / 2, 2);
+    const diameter = parseFloat(point.size)
+    if (isNaN(diameter) || diameter <= 0) return 0
+    return Math.PI * Math.pow(diameter / 2, 2)
   }
 
   function generateGcode() {
-    const profile = drillStore.profiles[drillStore.currentProfile];
+    const profile = drillStore.profiles[drillStore.currentProfile]
 
-    const solderPoints = getSolderPoints();
+    const solderPoints = getSolderPoints()
 
     if (solderPoints.length === 0) {
-      throw new Error("No solder points selected");
+      throw new Error('No solder points selected')
     }
 
-    let gcode = "";
+    let gcode = ''
 
     gcode += processTemplate(profile.startGcode, {
       START_SAFE_Z: profile.startSafeZ,
       ORIGIN_X: profile.zeroX ?? 0,
       ORIGIN_Y: profile.zeroY ?? 0,
       ORIGIN_Z: profile.zeroZ ?? 0,
-      MULTIPLIER: profile.solderFeedMultiplier ?? 0,
-    });
-    gcode += "\n\n";
+      MULTIPLIER: profile.solderFeedMultiplier ?? 0
+    })
+    gcode += '\n\n'
 
     if (profile.periodicAtStart && profile.periodicHoleCount > 0) {
       gcode += processTemplate(profile.periodicGcode, {
@@ -103,49 +106,51 @@ export function useGcodeGenerator() {
         ORIGIN_X: profile.zeroX ?? 0,
         ORIGIN_Y: profile.zeroY ?? 0,
         ORIGIN_Z: profile.zeroZ ?? 0,
-        MULTIPLIER: profile.solderFeedMultiplier ?? 0,
-      });
-      gcode += "\n\n";
+        MULTIPLIER: profile.solderFeedMultiplier ?? 0
+      })
+      gcode += '\n\n'
     }
 
-    let lastPcbId = null;
+    let lastPcbId = null
 
     solderPoints.forEach((point, index) => {
       if (point.pcbId !== lastPcbId) {
         if (lastPcbId !== null) {
           gcode += processTemplate(profile.betweenBoardGcode, {
-            START_SAFE_Z: profile.startSafeZ,
-          });
-          gcode += "\n";
+            START_SAFE_Z: profile.startSafeZ
+          })
+          gcode += '\n'
         }
-        gcode += `; --- PCB ${point.pcbIndex + 1}: ${point.pcbName} ---\n`;
-        lastPcbId = point.pcbId;
+        gcode += `; --- PCB ${point.pcbIndex + 1}: ${point.pcbName} ---\n`
+        lastPcbId = point.pcbId
       }
 
       if (index > 0) {
-        const prev = solderPoints[index - 1];
-        const zones = drillStore._getAllNoGoZones();
+        const prev = solderPoints[index - 1]
+        const zones = drillStore._getAllNoGoZones()
         const waypoints = drillStore.computeRouteAroundZones(
-          prev.transformedX, prev.transformedY,
-          point.transformedX, point.transformedY,
+          prev.transformedX,
+          prev.transformedY,
+          point.transformedX,
+          point.transformedY,
           zones
-        );
+        )
         if (waypoints.length > 0) {
-          gcode += "; Route around no-go zone\n";
+          gcode += '; Route around no-go zone\n'
           for (const wp of waypoints) {
-            gcode += `G0 X${wp.x.toFixed(2)} Y${wp.y.toFixed(2)} F6000\n`;
+            gcode += `G0 X${wp.x.toFixed(2)} Y${wp.y.toFixed(2)} F6000\n`
           }
-          gcode += "\n";
+          gcode += '\n'
         }
       }
 
-      const pointNumber = index + 1;
-      const progressPercent = Math.round((index / solderPoints.length) * 100);
+      const pointNumber = index + 1
+      const progressPercent = Math.round((index / solderPoints.length) * 100)
 
-      const padArea = getPadArea(point);
-      const soakCurve = drillStore.splineCurves.soak;
-      const feedCurve = drillStore.splineCurves.feed;
-      const dwellCurve = drillStore.splineCurves.dwell;
+      const padArea = getPadArea(point)
+      const soakCurve = drillStore.splineCurves.soak
+      const feedCurve = drillStore.splineCurves.feed
+      const dwellCurve = drillStore.splineCurves.dwell
 
       const pointVars = {
         INDEX: index,
@@ -168,13 +173,17 @@ export function useGcodeGenerator() {
         PROGRESS_PERCENT: progressPercent,
         PCB_THICKNESS: point.pcbThickness,
         PCB_INDEX: point.pcbIndex + 1,
-        PCB_NAME: point.pcbName,
-      };
+        PCB_NAME: point.pcbName
+      }
 
-      gcode += processTemplate(profile.perPointGcode, pointVars);
-      gcode += "\n\n";
+      gcode += processTemplate(profile.perPointGcode, pointVars)
+      gcode += '\n\n'
 
-      if (profile.periodicHoleCount > 0 && (index + 1) % profile.periodicHoleCount === 0 && index < solderPoints.length - 1) {
+      if (
+        profile.periodicHoleCount > 0 &&
+        (index + 1) % profile.periodicHoleCount === 0 &&
+        index < solderPoints.length - 1
+      ) {
         gcode += processTemplate(profile.periodicGcode, {
           PERIODIC_HOLE_COUNT: profile.periodicHoleCount,
           START_SAFE_Z: profile.startSafeZ,
@@ -182,11 +191,11 @@ export function useGcodeGenerator() {
           ORIGIN_X: profile.zeroX ?? 0,
           ORIGIN_Y: profile.zeroY ?? 0,
           ORIGIN_Z: profile.zeroZ ?? 0,
-          MULTIPLIER: profile.solderFeedMultiplier ?? 0,
-        });
-        gcode += "\n\n";
+          MULTIPLIER: profile.solderFeedMultiplier ?? 0
+        })
+        gcode += '\n\n'
       }
-    });
+    })
 
     if (profile.periodicAtEnd && profile.periodicHoleCount > 0) {
       gcode += processTemplate(profile.periodicGcode, {
@@ -196,33 +205,33 @@ export function useGcodeGenerator() {
         ORIGIN_X: profile.zeroX ?? 0,
         ORIGIN_Y: profile.zeroY ?? 0,
         ORIGIN_Z: profile.zeroZ ?? 0,
-        MULTIPLIER: profile.solderFeedMultiplier ?? 0,
-      });
-      gcode += "\n\n";
+        MULTIPLIER: profile.solderFeedMultiplier ?? 0
+      })
+      gcode += '\n\n'
     }
 
     gcode += processTemplate(profile.endGcode, {
       END_SAFE_Z: profile.endSafeZ,
-      BEEP: profile.playBeep ? 200 : 0,
-    });
+      BEEP: profile.playBeep ? 200 : 0
+    })
 
-    return gcode;
+    return gcode
   }
 
   function getSolderPoints() {
-    const points = [];
+    const points = []
 
     for (let pcbIndex = 0; pcbIndex < drillStore.pcbs.length; pcbIndex++) {
-      const pcb = drillStore.pcbs[pcbIndex];
-      const angle = -(pcb.rotation * Math.PI) / 180;
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
+      const pcb = drillStore.pcbs[pcbIndex]
+      const angle = -(pcb.rotation * Math.PI) / 180
+      const cos = Math.cos(angle)
+      const sin = Math.sin(angle)
 
       for (const id of pcb.path) {
-        const drill = pcb.drillData.find(d => d.id === id);
+        const drill = pcb.drillData.find((d) => d.id === id)
         if (drill && drill.solder) {
-          const rotatedX = drill.x * cos - drill.y * sin;
-          const rotatedY = drill.x * sin + drill.y * cos;
+          const rotatedX = drill.x * cos - drill.y * sin
+          const rotatedY = drill.x * sin + drill.y * cos
 
           points.push({
             ...drill,
@@ -232,81 +241,116 @@ export function useGcodeGenerator() {
             pcbId: pcb.id,
             pcbIndex,
             pcbName: pcb.filename,
-            pcbThickness: pcb.thickness,
-          });
+            pcbThickness: pcb.thickness
+          })
         }
       }
     }
 
-    return points;
+    return points
   }
 
   function randInt(min, max) {
-    const lo = Math.ceil(min);
-    const hi = Math.floor(max);
-    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+    const lo = Math.ceil(min)
+    const hi = Math.floor(max)
+    return Math.floor(Math.random() * (hi - lo + 1)) + lo
   }
 
   function processTemplate(template, variables) {
-    let processed = template;
+    let processed = template
 
-    processed = processed.replace(/\{INDEX\s*\+\s*1\}/g, '{POINT_NUMBER}');
-    processed = processed.replace(/\{INDEX\s*\/\s*TOTAL_POINTS\s*\*\s*100\}/g, '{PROGRESS_PERCENT}');
+    processed = processed.replace(/\{INDEX\s*\+\s*1\}/g, '{POINT_NUMBER}')
+    processed = processed.replace(/\{INDEX\s*\/\s*TOTAL_POINTS\s*\*\s*100\}/g, '{PROGRESS_PERCENT}')
 
     processed = processed.replace(/\{([^}]+)\}/g, (match, expression) => {
-      const trimmed = expression.trim();
+      const trimmed = expression.trim()
 
-      const randMatch = trimmed.match(/^RAND\s*\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/);
+      const randMatch = trimmed.match(
+        /^RAND\s*\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/
+      )
       if (randMatch) {
-        return randInt(Number(randMatch[1]), Number(randMatch[2]));
+        return randInt(Number(randMatch[1]), Number(randMatch[2]))
       }
 
       if (variables.hasOwnProperty(trimmed)) {
-        const value = variables[trimmed];
+        const value = variables[trimmed]
         if (typeof value === 'number') {
-          if (['INDEX', 'TOTAL_POINTS', 'MULTIPLIER', 'BEEP', 'POINT_NUMBER', 'PROGRESS_PERCENT', 'PCB_INDEX'].includes(trimmed)) {
-            return value.toString();
+          if (
+            [
+              'INDEX',
+              'TOTAL_POINTS',
+              'MULTIPLIER',
+              'BEEP',
+              'POINT_NUMBER',
+              'PROGRESS_PERCENT',
+              'PCB_INDEX'
+            ].includes(trimmed)
+          ) {
+            return value.toString()
           }
-          return value.toFixed(2);
+          return value.toFixed(2)
         }
-        return value.toString();
+        return value.toString()
       }
 
       try {
-        const func = new Function(...Object.keys(variables), `return ${expression}`);
-        const result = func(...Object.values(variables));
+        const func = new Function(...Object.keys(variables), `return ${expression}`)
+        const result = func(...Object.values(variables))
 
         if (typeof result === 'number') {
           if (expression.includes('Math.round') || Number.isInteger(result)) {
-            return result.toString();
+            return result.toString()
           }
-          return result.toFixed(2);
+          return result.toFixed(2)
         }
 
-        return result.toString();
+        return result.toString()
       } catch (e) {
-        console.error(`Failed to evaluate expression: "${expression}"`, e);
-        return match;
+        console.error(`Failed to evaluate expression: "${expression}"`, e)
+        return match
       }
-    });
+    })
 
-    return processed;
+    return processed
   }
 
   function saveGcodeFile(gcode) {
-    const firstPcb = drillStore.pcbs[0];
-    const baseName = firstPcb?.filename?.replace(/\.[^/.]+$/, "") || "solder-gcode";
-    const blob = new Blob([gcode], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${baseName}.gcode`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const firstPcb = drillStore.pcbs[0]
+    const baseName = firstPcb?.filename?.replace(/\.[^/.]+$/, '') || 'solder-gcode'
+    const blob = new Blob([gcode], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${baseName}.gcode`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function checkForRiskyLeftMoves(solderPoints, threshold) {
+    if (!solderPoints || solderPoints.length < 2 || !threshold || threshold <= 0) return []
+
+    const risky = []
+    for (let i = 0; i < solderPoints.length - 1; i++) {
+      const prev = solderPoints[i]
+      const curr = solderPoints[i + 1]
+      const dx = curr.transformedX - prev.transformedX
+      if (dx < 0) {
+        const distance = Math.hypot(dx, curr.transformedY - prev.transformedY)
+        if (distance < threshold) {
+          risky.push({ prev, curr, distance, index: i })
+        }
+      }
+    }
+    return risky
   }
 
   return {
     generateGcode,
     saveGcodeFile,
-  };
+    getSolderPoints,
+    checkForRiskyLeftMoves,
+    interpolateSpline,
+    getPadArea,
+    processTemplate
+  }
 }

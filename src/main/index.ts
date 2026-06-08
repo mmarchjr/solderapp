@@ -1,9 +1,15 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { SerialPort } from 'serialport'
 
-function createWindow(): void {
+let selectedPortId: string | null = null
+
+// Disable Chromium's serial port blocklist so all USB-to-serial adapters are visible
+app.commandLine.appendSwitch('disable-serial-blocklist')
+
+function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
@@ -33,6 +39,8 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return mainWindow
 }
 
 // This method will be called when Electron has finished
@@ -52,7 +60,74 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  createWindow()
+  const mainWindow = createWindow()
+
+  // IPC: List available serial ports for the custom port picker
+  ipcMain.handle('serial:get-ports', async () => {
+    try {
+      const ports = await SerialPort.list()
+      return ports.map((p) => ({
+        portId: p.path,
+        portName: p.path,
+        displayName: p.manufacturer || p.path
+      }))
+    } catch (err) {
+      console.error('Failed to list serial ports:', err)
+      return []
+    }
+  })
+
+  // IPC: Set the user's port selection so the select-serial-port handler auto-selects it
+  ipcMain.on('serial:select-port', (_event, portId: string) => {
+    selectedPortId = portId
+  })
+
+  // Web Serial API: auto-select port when navigator.serial.requestPort() is called
+  mainWindow.webContents.session.on(
+    'select-serial-port',
+    (event, portList, _webContents, callback) => {
+      event.preventDefault()
+
+      if (!portList || portList.length === 0) {
+        dialog.showErrorBox(
+          'No Serial Ports Found',
+          'No serial devices were detected. Make sure your device is plugged in and drivers are installed.'
+        )
+        callback('')
+        return
+      }
+
+      // If the renderer pre-selected a port via the custom picker, match by portName
+      if (selectedPortId) {
+        const match = portList.find(
+          (p) => p.portName === selectedPortId || p.portId === selectedPortId
+        )
+        if (match) {
+          callback(match.portId)
+          selectedPortId = null
+          return
+        }
+      }
+
+      // Fallback: auto-select the first port
+      callback(portList[0].portId)
+    }
+  )
+  mainWindow.webContents.session.setPermissionCheckHandler(
+    (_webContents, permission, _requestingOrigin, details) => {
+      if (permission === 'serial' && details.securityOrigin === 'file:///') {
+        return true
+      }
+      return false
+    }
+  )
+
+  mainWindow.webContents.session.setDevicePermissionHandler((details) => {
+    if (details.deviceType === 'serial' && details.origin === 'file://') {
+      return true
+    }
+    return false
+  })
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

@@ -1,46 +1,30 @@
-
 <template>
   <div class="app-root">
-
     <div v-if="isMobile && route.meta.pageClass == 'toolpath-editor-page'" class="mobile-message">
+      <!-- Bottom section -->
+      <div class="mobile-actions">
+        <button class="btn btn-outline-light share-btn" @click="handleShare">
+          <i class="fas fa-share-alt me-2"></i> Share or Send to Yourself
+        </button>
+      </div>
+    </div>
 
-<!-- Bottom section -->
-<div class="mobile-actions">
-  <button class="btn btn-outline-light share-btn" @click="handleShare">
-    <i class="fas fa-share-alt me-2"></i> Share or Send to Yourself
-  </button>
-
-
-</div>
-
-</div>
-
-
-
-
-  <div v-else :class="routeClass">
-   
-    <RouterView />
-
-    
+    <div v-else :class="routeClass">
+      <RouterView />
+    </div>
   </div>
-
-
-
-</div>
-
 </template>
 
 <script setup>
 import { useRoute } from 'vue-router'
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed } from 'vue'
 import { useDrillStore } from '@/stores/store'
 
 const isMobile = ref(false)
-const route = useRoute();
+const route = useRoute()
 
 // Dynamically get route class from meta
-const routeClass = computed(() => route.meta.pageClass || '');
+const routeClass = computed(() => route.meta.pageClass || '')
 
 const handleShare = async () => {
   if (navigator.share) {
@@ -49,29 +33,24 @@ const handleShare = async () => {
         title: 'PCB Soldering Toolpath Editor',
         text: 'PCB soldering toolpath editor for Ender 3 printers.',
         url: window.location.href
-      });
+      })
     } catch (err) {
-      console.log('Share cancelled or failed:', err);
+      console.log('Share cancelled or failed:', err)
     }
   } else {
-    alert('Sharing not supported on this device.');
+    alert('Sharing not supported on this device.')
   }
-};
-
+}
 
 onMounted(() => {
-  isMobile.value = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  isMobile.value = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  )
 
   const drillStore = useDrillStore()
   drillStore.initProfiles()
-  
-});
-
-
-
-
+})
 </script>
-
 
 <style scoped>
 .nav-link {
@@ -79,14 +58,13 @@ onMounted(() => {
   font-size: 1.25rem !important;
   padding: 0rem 1rem !important;
 }
-
-
 </style>
 
 <style>
-
 /* General resets remain global */
-html, body, #app {
+html,
+body,
+#app {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -108,9 +86,6 @@ html, body, #app {
   height: 100vh;
 }
 
-
-
-
 .mobile-message {
   display: flex;
   flex-direction: column;
@@ -128,7 +103,6 @@ html, body, #app {
   flex-direction: column;
   align-items: center;
 }
-
 
 .mobile-text {
   font-size: 1.1rem;
@@ -179,6 +153,4 @@ html, body, #app {
   font-weight: 600;
   flex-shrink: 0; /* prevents squishing on small screens */
 }
-
-
 </style>

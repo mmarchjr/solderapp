@@ -6,11 +6,11 @@
           {{ name }}
         </option>
       </select>
-      
+
       <div class="dropdown" ref="dropdownElement" @click.stop>
-        <button 
-          class="btn btn-outline-secondary" 
-          type="button" 
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
           @click="isDropdownOpen = !isDropdownOpen"
           title="Profile options"
         >
@@ -18,26 +18,50 @@
         </button>
         <ul v-show="isDropdownOpen" class="dropdown-menu show">
           <li>
-            <a class="dropdown-item" href="#" @click.prevent="showNewProfile = true; isDropdownOpen = false">
+            <a
+              class="dropdown-item"
+              href="#"
+              @click.prevent="
+                showNewProfile = true
+                isDropdownOpen = false
+              "
+            >
               <i class="fas fa-plus me-2"></i>New Profile
             </a>
           </li>
           <li>
-            <a class="dropdown-item" href="#" @click.prevent="showDuplicateProfile = true; isDropdownOpen = false">
+            <a
+              class="dropdown-item"
+              href="#"
+              @click.prevent="
+                showDuplicateProfile = true
+                isDropdownOpen = false
+              "
+            >
               <i class="fas fa-copy me-2"></i>Duplicate Profile
             </a>
           </li>
           <li>
-            <a class="dropdown-item" href="#" @click.prevent="showRenameProfile = true; isDropdownOpen = false">
+            <a
+              class="dropdown-item"
+              href="#"
+              @click.prevent="
+                showRenameProfile = true
+                isDropdownOpen = false
+              "
+            >
               <i class="fas fa-edit me-2"></i>Rename Profile
             </a>
           </li>
-          <li><hr class="dropdown-divider"></li>
+          <li><hr class="dropdown-divider" /></li>
           <li>
-            <a 
-              class="dropdown-item text-danger" 
-              href="#" 
-              @click.prevent="deleteCurrentProfile; isDropdownOpen = false"
+            <a
+              class="dropdown-item text-danger"
+              href="#"
+              @click.prevent="
+                deleteCurrentProfile
+                isDropdownOpen = false
+              "
               :class="{ disabled: profileNames.length <= 1 }"
             >
               <i class="fas fa-trash me-2"></i>Delete Profile
@@ -56,19 +80,21 @@
             <button type="button" class="btn-close" @click="showNewProfile = false"></button>
           </div>
           <div class="modal-body">
-            <input 
-                type="text" 
-                class="form-control" 
-                v-model="newProfileName"
-                placeholder="Enter profile name"
-                @keyup.enter="createNewProfile"
-                @keyup.escape="showNewProfile = false"
-                ref="newProfileInput"
-                />
+            <input
+              type="text"
+              class="form-control"
+              v-model="newProfileName"
+              placeholder="Enter profile name"
+              @keyup.enter="createNewProfile"
+              @keyup.escape="showNewProfile = false"
+              ref="newProfileInput"
+            />
             <div v-if="error" class="text-danger mt-2">{{ error }}</div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="showNewProfile = false">Cancel</button>
+            <button type="button" class="btn btn-secondary" @click="showNewProfile = false">
+              Cancel
+            </button>
             <button type="button" class="btn btn-primary" @click="createNewProfile">Create</button>
           </div>
         </div>
@@ -84,20 +110,24 @@
             <button type="button" class="btn-close" @click="showRenameProfile = false"></button>
           </div>
           <div class="modal-body">
-            <input 
-                type="text" 
-                class="form-control" 
-                v-model="renameProfileName"
-                placeholder="Enter new name"
-                @keyup.enter="renameCurrentProfile"
-                @keyup.escape="showRenameProfile = false"
-                ref="renameProfileInput"
-                />
+            <input
+              type="text"
+              class="form-control"
+              v-model="renameProfileName"
+              placeholder="Enter new name"
+              @keyup.enter="renameCurrentProfile"
+              @keyup.escape="showRenameProfile = false"
+              ref="renameProfileInput"
+            />
             <div v-if="error" class="text-danger mt-2">{{ error }}</div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="showRenameProfile = false">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="renameCurrentProfile">Rename</button>
+            <button type="button" class="btn btn-secondary" @click="showRenameProfile = false">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" @click="renameCurrentProfile">
+              Rename
+            </button>
           </div>
         </div>
       </div>
@@ -112,20 +142,24 @@
             <button type="button" class="btn-close" @click="showDuplicateProfile = false"></button>
           </div>
           <div class="modal-body">
-            <input 
-                type="text" 
-                class="form-control" 
-                v-model="duplicateProfileName"
-                :placeholder="`Copy of ${selectedProfile}`"
-                @keyup.enter="duplicateCurrentProfile"
-                @keyup.escape="showDuplicateProfile = false"
-                ref="duplicateProfileInput"
-                />
+            <input
+              type="text"
+              class="form-control"
+              v-model="duplicateProfileName"
+              :placeholder="`Copy of ${selectedProfile}`"
+              @keyup.enter="duplicateCurrentProfile"
+              @keyup.escape="showDuplicateProfile = false"
+              ref="duplicateProfileInput"
+            />
             <div v-if="error" class="text-danger mt-2">{{ error }}</div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="showDuplicateProfile = false">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="duplicateCurrentProfile">Duplicate</button>
+            <button type="button" class="btn btn-secondary" @click="showDuplicateProfile = false">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" @click="duplicateCurrentProfile">
+              Duplicate
+            </button>
           </div>
         </div>
       </div>
@@ -134,153 +168,153 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch, onMounted } from 'vue';
-import { useDrillStore } from '@/stores/store';
+import { ref, computed, nextTick, watch, onMounted } from 'vue'
+import { useDrillStore } from '@/stores/store'
 
-const drillStore = useDrillStore();
+const drillStore = useDrillStore()
 
-const isDropdownOpen = ref(false);
-const showNewProfile = ref(false);
-const showRenameProfile = ref(false);
-const showDuplicateProfile = ref(false);
-const newProfileName = ref('');
-const renameProfileName = ref('');
-const duplicateProfileName = ref('');
-const error = ref('');
+const isDropdownOpen = ref(false)
+const showNewProfile = ref(false)
+const showRenameProfile = ref(false)
+const showDuplicateProfile = ref(false)
+const newProfileName = ref('')
+const renameProfileName = ref('')
+const duplicateProfileName = ref('')
+const error = ref('')
 
 // Refs for input elements
-const newProfileInput = ref(null);
-const renameProfileInput = ref(null);
-const duplicateProfileInput = ref(null);
-const dropdownElement = ref(null);
+const newProfileInput = ref(null)
+const renameProfileInput = ref(null)
+const duplicateProfileInput = ref(null)
+const dropdownElement = ref(null)
 
 const selectedProfile = computed({
   get: () => drillStore.currentProfile,
   set: (val) => drillStore.setCurrentProfile(val)
-});
+})
 
-const profileNames = computed(() => Object.keys(drillStore.profiles));
+const profileNames = computed(() => Object.keys(drillStore.profiles))
 
 // Handle clicks outside dropdown
 onMounted(() => {
   const handleClickOutside = (event) => {
     if (dropdownElement.value && !dropdownElement.value.contains(event.target)) {
-      isDropdownOpen.value = false;
+      isDropdownOpen.value = false
     }
-  };
+  }
 
-  document.addEventListener('click', handleClickOutside);
+  document.addEventListener('click', handleClickOutside)
 
   return () => {
-    document.removeEventListener('click', handleClickOutside);
-  };
-});
+    document.removeEventListener('click', handleClickOutside)
+  }
+})
 
 // Dropdown handlers
 const handleNewProfile = () => {
-  isDropdownOpen.value = false;
-  showNewProfile.value = true;
-};
+  isDropdownOpen.value = false
+  showNewProfile.value = true
+}
 
 const handleDuplicateProfile = () => {
-  isDropdownOpen.value = false;
-  showDuplicateProfile.value = true;
-};
+  isDropdownOpen.value = false
+  showDuplicateProfile.value = true
+}
 
 const handleRenameProfile = () => {
-  isDropdownOpen.value = false;
-  showRenameProfile.value = true;
-};
+  isDropdownOpen.value = false
+  showRenameProfile.value = true
+}
 
 // Close dropdown when a menu item is clicked or pressing escape
 const handleMenuItemClick = (callback) => {
-  callback();
-  isDropdownOpen.value = false;
-};
+  callback()
+  isDropdownOpen.value = false
+}
 
 // Auto-focus inputs when modals open
 watch(showNewProfile, async (val) => {
   if (val) {
-    await nextTick();
-    newProfileInput.value?.focus();
+    await nextTick()
+    newProfileInput.value?.focus()
   } else {
     // Clear error when closing
-    error.value = '';
-    newProfileName.value = '';
+    error.value = ''
+    newProfileName.value = ''
   }
-});
+})
 
 watch(showRenameProfile, async (val) => {
   if (val) {
-    renameProfileName.value = selectedProfile.value;
-    await nextTick();
-    renameProfileInput.value?.focus();
-    renameProfileInput.value?.select();
+    renameProfileName.value = selectedProfile.value
+    await nextTick()
+    renameProfileInput.value?.focus()
+    renameProfileInput.value?.select()
   } else {
     // Clear error when closing
-    error.value = '';
+    error.value = ''
   }
-});
+})
 
 watch(showDuplicateProfile, async (val) => {
   if (val) {
-    duplicateProfileName.value = `Copy of ${selectedProfile.value}`;
-    await nextTick();
-    duplicateProfileInput.value?.focus();
-    duplicateProfileInput.value?.select();
+    duplicateProfileName.value = `Copy of ${selectedProfile.value}`
+    await nextTick()
+    duplicateProfileInput.value?.focus()
+    duplicateProfileInput.value?.select()
   } else {
     // Clear error when closing
-    error.value = '';
+    error.value = ''
   }
-});
+})
 
 const createNewProfile = () => {
-  error.value = '';
+  error.value = ''
   try {
-    drillStore.createProfile(newProfileName.value);
-    drillStore.setCurrentProfile(newProfileName.value);
-    showNewProfile.value = false;
-    newProfileName.value = '';
+    drillStore.createProfile(newProfileName.value)
+    drillStore.setCurrentProfile(newProfileName.value)
+    showNewProfile.value = false
+    newProfileName.value = ''
   } catch (e) {
-    error.value = e.message;
+    error.value = e.message
   }
-};
+}
 
 const renameCurrentProfile = () => {
-  error.value = '';
+  error.value = ''
   try {
-    drillStore.renameProfile(selectedProfile.value, renameProfileName.value);
-    showRenameProfile.value = false;
-    renameProfileName.value = '';
+    drillStore.renameProfile(selectedProfile.value, renameProfileName.value)
+    showRenameProfile.value = false
+    renameProfileName.value = ''
   } catch (e) {
-    error.value = e.message;
+    error.value = e.message
   }
-};
+}
 
 const duplicateCurrentProfile = () => {
-  error.value = '';
-  const name = duplicateProfileName.value || `Copy of ${selectedProfile.value}`;
+  error.value = ''
+  const name = duplicateProfileName.value || `Copy of ${selectedProfile.value}`
   try {
-    drillStore.duplicateProfile(selectedProfile.value, name);
-    drillStore.setCurrentProfile(name);
-    showDuplicateProfile.value = false;
-    duplicateProfileName.value = '';
+    drillStore.duplicateProfile(selectedProfile.value, name)
+    drillStore.setCurrentProfile(name)
+    showDuplicateProfile.value = false
+    duplicateProfileName.value = ''
   } catch (e) {
-    error.value = e.message;
+    error.value = e.message
   }
-};
+}
 
 const deleteCurrentProfile = () => {
-  if (profileNames.value.length <= 1) return;
-  
+  if (profileNames.value.length <= 1) return
+
   if (confirm(`Delete profile "${selectedProfile.value}"?`)) {
     try {
-      drillStore.deleteProfile(selectedProfile.value);
+      drillStore.deleteProfile(selectedProfile.value)
     } catch (e) {
-      alert(e.message);
+      alert(e.message)
     }
   }
-};
+}
 </script>
 
 <style scoped>
@@ -334,8 +368,8 @@ const deleteCurrentProfile = () => {
   padding: 0.5rem !important;
 }
 
-.modal-body{
-    padding: 0rem !important;
+.modal-body {
+  padding: 0rem !important;
 }
 
 .modal-header {
@@ -352,8 +386,8 @@ const deleteCurrentProfile = () => {
   padding: 0rem !important;
 }
 
-.modal-footer button{
-    margin-top: 0.5rem;
+.modal-footer button {
+  margin-top: 0.5rem;
 }
 
 .dropdown-item.disabled {
@@ -361,12 +395,10 @@ const deleteCurrentProfile = () => {
   pointer-events: none;
 }
 
-
 .modal-dialog-custom {
   /* max-width: 100vw;
   max-height: 100vh; */
   width: 400px;
   margin: 2.5vh auto;
 }
-
 </style>

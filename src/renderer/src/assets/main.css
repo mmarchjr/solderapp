@@ -1,15 +1,15 @@
 :root {
-  --bs-primary: #66c6d0;         /* Teal-Cyan */
-  --bs-secondary: #434343;       /* Dark gray */
-  --bs-dark: #222222;            /* Matte Black */
-  --bs-light: #FFFFFF;           /* White */
-  --bs-body-bg: #F8F9FA;         /* Light gray background */
-  --bs-body-color: #222222;      /* Dark text */
-  --bs-border-color: #DDDDDD;    /* Soft borders */
+  --bs-primary: #66c6d0; /* Teal-Cyan */
+  --bs-secondary: #434343; /* Dark gray */
+  --bs-dark: #222222; /* Matte Black */
+  --bs-light: #ffffff; /* White */
+  --bs-body-bg: #f8f9fa; /* Light gray background */
+  --bs-body-color: #222222; /* Dark text */
+  --bs-border-color: #dddddd; /* Soft borders */
 
   /* Hover darkened colors (manually adjusted) */
   --bs-primary-hover: #4fb4c0;
-  --bs-secondary-hover: #2c2c2c ;
+  --bs-secondary-hover: #2c2c2c;
 
   --bs-primary-active: #3ba9b4; /* Slightly darker teal for button press */
   --bs-secondary-active: #2a2a2a; /* Slightly darker than hover */
@@ -60,7 +60,6 @@ body {
   color: var(--bs-light) !important;
 }
 
-
 .btn-secondary {
   background-color: var(--bs-secondary);
   border-color: var(--bs-secondary);
@@ -80,7 +79,6 @@ body {
   color: var(--bs-light) !important;
 }
 
-
 /* .btn-outline-light base state */
 .btn-outline-light {
   border-color: var(--bs-secondary);
@@ -95,7 +93,6 @@ body {
   border-color: var(--bs-secondary);
   color: var(--bs-light);
 }
-
 
 /* Tables */
 .table-dark {
@@ -133,7 +130,6 @@ a:focus {
   text-decoration: none;
 }
 
-
 /* Text utilities (optional override if needed) */
 .text-primary {
   color: var(--bs-primary) !important;
@@ -150,6 +146,3 @@ a:focus {
 .bg-secondary {
   background-color: var(--bs-secondary) !important;
 }
-
-
-

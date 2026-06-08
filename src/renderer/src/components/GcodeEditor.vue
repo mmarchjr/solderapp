@@ -29,60 +29,63 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue';
-import hljs from 'highlight.js/lib/core';
+import { ref, watch, onMounted, nextTick } from 'vue'
+import hljs from 'highlight.js/lib/core'
 
 const props = defineProps({
   code: String,
   title: String,
   icon: String
-});
+})
 
-const emits = defineEmits(['update:code']);
+const emits = defineEmits(['update:code'])
 
-const isEditing = ref(false);
-const editableCode = ref(props.code);
-const originalCode = ref(props.code);
-const codeBlock = ref(null);
+const isEditing = ref(false)
+const editableCode = ref(props.code)
+const originalCode = ref(props.code)
+const codeBlock = ref(null)
 
 const toggleEdit = () => {
-  originalCode.value = props.code;
-  editableCode.value = props.code;
-  isEditing.value = true;
-};
+  originalCode.value = props.code
+  editableCode.value = props.code
+  isEditing.value = true
+}
 
 const cancelEdit = () => {
-  editableCode.value = originalCode.value;
-  isEditing.value = false;
+  editableCode.value = originalCode.value
+  isEditing.value = false
   nextTick(() => {
     if (codeBlock.value) {
-      hljs.highlightElement(codeBlock.value);
+      hljs.highlightElement(codeBlock.value)
     }
-  });
-};
+  })
+}
 
 const saveCode = () => {
-  emits('update:code', editableCode.value);
-  isEditing.value = false;
+  emits('update:code', editableCode.value)
+  isEditing.value = false
   nextTick(() => {
     if (codeBlock.value) {
-      hljs.highlightElement(codeBlock.value);
+      hljs.highlightElement(codeBlock.value)
     }
-  });
-};
+  })
+}
 
-watch(() => props.code, (newCode) => {
-  if (!isEditing.value) {
-    editableCode.value = newCode;
-    originalCode.value = newCode;
+watch(
+  () => props.code,
+  (newCode) => {
+    if (!isEditing.value) {
+      editableCode.value = newCode
+      originalCode.value = newCode
+    }
   }
-});
+)
 
 onMounted(() => {
   if (codeBlock.value) {
-    hljs.highlightElement(codeBlock.value);
+    hljs.highlightElement(codeBlock.value)
   }
-});
+})
 </script>
 
 <style scoped>
@@ -100,7 +103,7 @@ pre code {
   white-space: pre-wrap;
 }
 
-.hljs{
-    background-color: #0d1117;
+.hljs {
+  background-color: #0d1117;
 }
 </style>
