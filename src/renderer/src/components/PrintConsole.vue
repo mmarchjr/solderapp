@@ -80,7 +80,7 @@ function formatTime(date) {
 <template>
   <div class="print-console">
     <h6 class="section-title"><i class="fa-solid fa-terminal me-1"></i> Console</h6>
-    <div class="log-container" ref="logContainer">
+    <div ref="logContainer" class="log-container">
       <div v-for="(entry, i) in logEntries" :key="i" class="log-entry" :class="'log-' + entry.type">
         <span class="log-time">{{ formatTime(entry.time) }}</span>
         <span class="log-text">{{ entry.text }}</span>
@@ -89,17 +89,17 @@ function formatTime(date) {
     </div>
     <div class="command-input">
       <input
+        v-model="manualCommand"
         type="text"
         class="form-control form-control-sm"
         placeholder="Send G-code command..."
-        v-model="manualCommand"
-        @keydown.enter="sendCommand"
         :disabled="disabled"
+        @keydown.enter="sendCommand"
       />
       <button
         class="btn btn-sm btn-primary"
-        @click="sendCommand"
         :disabled="disabled || !manualCommand.trim()"
+        @click="sendCommand"
       >
         <i class="fa-solid fa-paper-plane"></i>
       </button>

@@ -1,18 +1,18 @@
 <template>
   <div class="profile-manager">
     <div class="d-flex align-items-center gap-2">
-      <select class="form-select" v-model="selectedProfile">
+      <select v-model="selectedProfile" class="form-select">
         <option v-for="name in profileNames" :key="name" :value="name">
           {{ name }}
         </option>
       </select>
 
-      <div class="dropdown" ref="dropdownElement" @click.stop>
+      <div ref="dropdownElement" class="dropdown" @click.stop>
         <button
           class="btn btn-outline-secondary"
           type="button"
-          @click="isDropdownOpen = !isDropdownOpen"
           title="Profile options"
+          @click="isDropdownOpen = !isDropdownOpen"
         >
           <i class="fas fa-cog"></i>
         </button>
@@ -58,11 +58,11 @@
             <a
               class="dropdown-item text-danger"
               href="#"
+              :class="{ disabled: profileNames.length <= 1 }"
               @click.prevent="
                 deleteCurrentProfile
                 isDropdownOpen = false
               "
-              :class="{ disabled: profileNames.length <= 1 }"
             >
               <i class="fas fa-trash me-2"></i>Delete Profile
             </a>
@@ -81,13 +81,13 @@
           </div>
           <div class="modal-body">
             <input
+              ref="newProfileInput"
+              v-model="newProfileName"
               type="text"
               class="form-control"
-              v-model="newProfileName"
               placeholder="Enter profile name"
               @keyup.enter="createNewProfile"
               @keyup.escape="showNewProfile = false"
-              ref="newProfileInput"
             />
             <div v-if="error" class="text-danger mt-2">{{ error }}</div>
           </div>
@@ -111,13 +111,13 @@
           </div>
           <div class="modal-body">
             <input
+              ref="renameProfileInput"
+              v-model="renameProfileName"
               type="text"
               class="form-control"
-              v-model="renameProfileName"
               placeholder="Enter new name"
               @keyup.enter="renameCurrentProfile"
               @keyup.escape="showRenameProfile = false"
-              ref="renameProfileInput"
             />
             <div v-if="error" class="text-danger mt-2">{{ error }}</div>
           </div>
@@ -143,13 +143,13 @@
           </div>
           <div class="modal-body">
             <input
+              ref="duplicateProfileInput"
+              v-model="duplicateProfileName"
               type="text"
               class="form-control"
-              v-model="duplicateProfileName"
               :placeholder="`Copy of ${selectedProfile}`"
               @keyup.enter="duplicateCurrentProfile"
               @keyup.escape="showDuplicateProfile = false"
-              ref="duplicateProfileInput"
             />
             <div v-if="error" class="text-danger mt-2">{{ error }}</div>
           </div>

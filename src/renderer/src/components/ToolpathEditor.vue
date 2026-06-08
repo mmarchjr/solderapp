@@ -5,16 +5,16 @@
       @dragover.prevent
       @drop.prevent="handleCanvasDrop"
     >
-      <div class="container topbar-overlay d-flex" v-if="!readOnly">
+      <div v-if="!readOnly" class="container topbar-overlay d-flex">
         <div class="row">
           <div class="mb-3 d-flex align-items-center pcb-controls">
             <label class="form-label"
               >PCB Offset (mm) <i class="fas fa-arrows-alt-h pcb-icon"></i
             ></label>
             <input
+              v-model.number="drillStore.originOffsetX"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              v-model.number="drillStore.originOffsetX"
               @input="
                 saveOffsetUndoState()
                 updateCanvas()
@@ -22,9 +22,9 @@
             />
             <label class="form-label"><i class="fas fa-arrows-alt-v pcb-icon"></i></label>
             <input
+              v-model.number="drillStore.originOffsetY"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              v-model.number="drillStore.originOffsetY"
               @input="
                 saveOffsetUndoState()
                 updateCanvas()
@@ -51,9 +51,9 @@
               >Via Filter (mm) <i class="fas fa-filter"></i
             ></label>
             <input
+              v-model.number="drillStore.viaFilterDiameter"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              v-model.number="drillStore.viaFilterDiameter"
               step="0.1"
               min="0"
               @input="updateCanvas()"
@@ -115,9 +115,9 @@
       <div class="editor-instructions">
         <transition name="fade" mode="out-in">
           <div
+            :key="currentLabelIndex"
             class="editor-label"
             v-html="editorLabels[currentLabelIndex].html"
-            :key="currentLabelIndex"
           />
         </transition>
       </div>
@@ -126,7 +126,7 @@
     <div class="col-lg-5 position-relative right-panel">
       <div class="align-items-center">
         <div class="mx-3 my-2">
-          <div class="profile-content" v-if="!showOriginCalculator">
+          <div v-if="!showOriginCalculator" class="profile-content">
             <div class="d-flex align-items-center my-2">
               <label class="form-label profile-label me-2">Machine Profile</label>
               <ProfileManager />
@@ -139,22 +139,22 @@
                 <div>
                   <button
                     class="btn btn-sm btn-outline-primary"
-                    @click="openFileDialog"
                     title="Add PCB"
+                    @click="openFileDialog"
                   >
                     <i class="fa-solid fa-plus"></i> Add
                   </button>
                   <button
                     class="btn btn-sm btn-outline-danger ms-1"
-                    @click="clearAllPcbs"
                     title="Clear All PCBs"
                     :disabled="drillStore.pcbs.length === 0"
+                    @click="clearAllPcbs"
                   >
                     <i class="fa-solid fa-trash"></i> Clear
                   </button>
                 </div>
               </div>
-              <div class="pcb-list" v-if="drillStore.pcbs.length > 0">
+              <div v-if="drillStore.pcbs.length > 0" class="pcb-list">
                 <div
                   v-for="(pcb, idx) in drillStore.pcbs"
                   :key="pcb.id"
@@ -177,11 +177,11 @@
                   <span class="badge bg-secondary me-1">{{ pcb.drillData.length }}</span>
                   <button
                     class="btn btn-sm btn-link p-0 text-decoration-none"
+                    title="Calculate PCB Offset"
                     @click.stop="
                       drillStore.setActivePcb(pcb.id)
                       toggleOriginCalculator()
                     "
-                    title="Calculate PCB Offset"
                   >
                     <i class="fa-solid fa-crosshairs"></i>
                   </button>
@@ -221,9 +221,9 @@
                 <div class="d-flex align-items-center mb-1">
                   <label class="text-muted me-2 mb-0" style="min-width: 70px">Offset X:</label>
                   <input
+                    v-model.number="drillStore.originOffsetX"
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
-                    v-model.number="drillStore.originOffsetX"
                     step="0.5"
                     @input="
                       saveOffsetUndoState()
@@ -234,9 +234,9 @@
                 <div class="d-flex align-items-center mb-1">
                   <label class="text-muted me-2 mb-0" style="min-width: 70px">Offset Y:</label>
                   <input
+                    v-model.number="drillStore.originOffsetY"
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
-                    v-model.number="drillStore.originOffsetY"
                     step="0.5"
                     @input="
                       saveOffsetUndoState()
@@ -247,9 +247,9 @@
                 <div class="d-flex align-items-center mb-1">
                   <label class="text-muted me-2 mb-0" style="min-width: 70px">Offset Z:</label>
                   <input
+                    v-model.number="drillStore.originOffsetZ"
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
-                    v-model.number="drillStore.originOffsetZ"
                     step="0.5"
                   />
                   <span class="ms-1">mm</span>
@@ -257,9 +257,9 @@
                 <div class="d-flex align-items-center mb-1">
                   <label class="text-muted me-2 mb-0" style="min-width: 70px">Rotation:</label>
                   <input
+                    v-model.number="drillStore.rotation"
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
-                    v-model.number="drillStore.rotation"
                     step="90"
                     @change="updateCanvas()"
                   />
@@ -268,9 +268,9 @@
                 <div class="d-flex align-items-center mb-1">
                   <label class="text-muted me-2 mb-0" style="min-width: 70px">Thickness:</label>
                   <input
+                    v-model.number="pcbThickness"
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
-                    v-model.number="pcbThickness"
                     step="0.1"
                   />
                   <span class="ms-1">mm</span>
@@ -293,9 +293,9 @@
                 <div class="d-flex align-items-center mb-1">
                   <label class="text-muted me-2 mb-0" style="min-width: 70px">Via Filter:</label>
                   <input
+                    v-model.number="drillStore.viaFilterDiameter"
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
-                    v-model.number="drillStore.viaFilterDiameter"
                     step="0.1"
                     min="0"
                     @input="updateCanvas()"
@@ -315,10 +315,10 @@
                 >PCB Thickness (mm) <i class="fas fa-layer-group"></i
               ></label>
               <input
+                v-model.number="pcbThickness"
                 type="number"
                 class="form-control d-inline w-auto pcb-input ms-2"
                 step="0.1"
-                v-model.number="pcbThickness"
               />
             </div>
 
@@ -332,7 +332,7 @@
             </div>
           </div>
 
-          <div class="origin-calculator" v-if="showOriginCalculator">
+          <div v-if="showOriginCalculator" class="origin-calculator">
             <button class="btn btn-outline-dark close-calculator" @click="closeCalculator">
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -341,7 +341,7 @@
 
             <div v-if="!printer.connected || !printer.homed" class="text-center my-3">
               <p class="text-muted mb-2">Printer must be connected and homed</p>
-              <button class="btn btn-primary" @click="handleHome" :disabled="!printer.connected">
+              <button class="btn btn-primary" :disabled="!printer.connected" @click="handleHome">
                 <i class="fa-solid fa-house me-1"></i> Home (G28)
               </button>
             </div>
@@ -364,13 +364,13 @@
 
               <div class="d-flex justify-content-center gap-3 my-2">
                 <JogWheel
-                  :stepSize="jogStep"
+                  :step-size="jogStep"
                   :disabled="!printer.connected || !printer.homed || printer.printing"
                   @jog="handleJogXY"
                 />
                 <JogBar
-                  :stepSize="jogStep"
-                  :currentZ="printer.position.z"
+                  :step-size="jogStep"
+                  :current-z="printer.position.z"
                   :disabled="!printer.connected || !printer.homed || printer.printing"
                   @jog="handleJogZ"
                 />
@@ -390,8 +390,8 @@
 
               <button
                 class="btn btn-outline-dark my-2 w-100"
-                @click="calculateOrigin"
                 :disabled="!selectedOriginPoint"
+                @click="calculateOrigin"
               >
                 <i class="fa-solid fa-calculator"></i> Calculate PCB Offset
               </button>
@@ -426,7 +426,7 @@
               @click="(e) => toggleSelect(hole.id, index, e)"
             >
               <td class="checkbox-cell">
-                <input type="checkbox" v-model="hole.solder" @change="onSolderToggle(hole)" />
+                <input v-model="hole.solder" type="checkbox" @change="onSolderToggle(hole)" />
               </td>
               <td>
                 <b>{{ hole.pathIndex !== null ? hole.pathIndex + 1 : '-' }}</b>

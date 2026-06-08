@@ -1,5 +1,5 @@
 <template>
-  <div class="modal fade" ref="modalEl" tabindex="-1" aria-hidden="true">
+  <div ref="modalEl" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
       <div class="modal-content bg-dark">
         <div class="modal-header py-2 bg-dark text-white border-bottom border-secondary">
@@ -28,8 +28,8 @@
           <button
             v-if="modelLoaded"
             class="btn btn-sm btn-outline-danger me-2"
-            @click="removeModel"
             title="Remove loaded model and restore default PCB"
+            @click="removeModel"
           >
             <i class="fa-solid fa-xmark me-1"></i>Remove Model
           </button>
@@ -58,14 +58,14 @@
               <span><i class="fa-solid fa-sliders me-1"></i>Adjust Model</span>
               <button
                 class="adj-reset-btn"
-                @click="resetModelAdjust"
                 title="Reset to auto-aligned position"
+                @click="resetModelAdjust"
               >
                 <i class="fa-solid fa-rotate-left"></i>
               </button>
             </div>
             <div class="adj-section-label">Rotate</div>
-            <div class="adj-row" v-for="a in ['X', 'Y', 'Z']" :key="'r' + a">
+            <div v-for="a in ['X', 'Y', 'Z']" :key="'r' + a" class="adj-row">
               <span class="adj-axis">{{ a }}</span>
               <button class="adj-btn" @click="rotateModel(a, -1)">&minus;90&deg;</button>
               <button class="adj-btn" @click="rotateModel(a, 1)">+90&deg;</button>
@@ -79,7 +79,7 @@
                 <option :value="5">5 mm</option>
               </select>
             </div>
-            <div class="adj-row" v-for="a in ['X', 'Y', 'Z']" :key="'o' + a">
+            <div v-for="a in ['X', 'Y', 'Z']" :key="'o' + a" class="adj-row">
               <span class="adj-axis">{{ a }}</span>
               <button class="adj-btn" @click="offsetModel(a, -1)">&minus;</button>
               <button class="adj-btn" @click="offsetModel(a, 1)">+</button>
@@ -87,8 +87,8 @@
             <div class="adj-save-row">
               <button
                 class="adj-btn adj-save-btn"
-                @click="saveModelSettings"
                 title="Save adjustment settings to JSON file"
+                @click="saveModelSettings"
               >
                 <i class="fa-solid fa-download me-1"></i>Save
               </button>
@@ -102,28 +102,28 @@
           <div
             class="simulator-controls bg-dark border-top border-secondary px-3 py-2 d-flex align-items-center gap-3"
           >
-            <button class="btn btn-sm btn-outline-light" @click="restart" title="Restart">
+            <button class="btn btn-sm btn-outline-light" title="Restart" @click="restart">
               <i class="fa-solid fa-backward-fast"></i>
             </button>
             <button
               class="btn btn-sm btn-outline-light"
-              @click="prevSolderPoint"
               title="Previous solder point"
+              @click="prevSolderPoint"
             >
               <i class="fa-solid fa-backward-step"></i>
             </button>
             <button
               class="btn btn-sm"
               :class="isPlaying ? 'btn-warning' : 'btn-success'"
-              @click="togglePlay"
               style="width: 42px"
+              @click="togglePlay"
             >
               <i :class="isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play'"></i>
             </button>
             <button
               class="btn btn-sm btn-outline-light"
-              @click="nextSolderPoint"
               title="Next solder point"
+              @click="nextSolderPoint"
             >
               <i class="fa-solid fa-forward-step"></i>
             </button>
@@ -159,9 +159,9 @@
               {{ formatTime(currentTime) }} / {{ formatTime(totalTime) }}
             </span>
             <select
+              v-model.number="playbackSpeed"
               class="form-select form-select-sm bg-dark text-white border-secondary"
               style="width: 80px"
-              v-model.number="playbackSpeed"
             >
               <option :value="1">1×</option>
               <option :value="2">2×</option>
@@ -639,6 +639,7 @@ function buildPathLine() {
   const mat = new THREE.LineBasicMaterial({ color: 0x999999, transparent: true, opacity: 0.45 })
   scene.add(new THREE.Line(geom, mat))
 }
+
 
 function buildIronTip() {
   ironGroup = new THREE.Group()

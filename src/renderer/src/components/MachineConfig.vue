@@ -385,7 +385,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="modal fade" id="machineConfigModal" tabindex="-1" aria-hidden="true">
+  <div id="machineConfigModal" class="modal fade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-ish">
       <div class="modal-content">
         <div class="modal-header">
@@ -428,14 +428,14 @@ onBeforeUnmount(() => {
                 <p class="text-muted small">Configure serial communication with the printer.</p>
 
                 <label class="form-label mt-3">Baud Rate</label>
-                <select class="form-select" v-model="baudRate">
+                <select v-model="baudRate" class="form-select">
                   <option v-for="rate in baudRateOptions" :key="rate" :value="rate">
                     {{ rate }}
                   </option>
                 </select>
 
                 <label class="form-label mt-3">Line Ending</label>
-                <select class="form-select" v-model="lineEnding">
+                <select v-model="lineEnding" class="form-select">
                   <option v-for="ending in lineEndingOptions" :key="ending" :value="ending">
                     {{ ending }}
                   </option>
@@ -471,16 +471,16 @@ onBeforeUnmount(() => {
                 <h5 class="mt-3"><i class="fa-solid fa-play"></i> Start G-code</h5>
 
                 <label class="form-label mt-3" title="{PCB_THICKNESS}">PCB Thickness (mm)</label>
-                <input type="number" class="form-control" v-model="pcbThickness" step="0.1" />
+                <input v-model="pcbThickness" type="number" class="form-control" step="0.1" />
 
                 <label class="form-label mt-3">Bed Size (mm)</label>
                 <div class="row">
                   <div class="col-6">
                     <label class="form-label form-label-sm">Width</label>
                     <input
+                      v-model.number="bedWidth"
                       type="number"
                       class="form-control"
-                      v-model.number="bedWidth"
                       step="1"
                       min="1"
                     />
@@ -488,9 +488,9 @@ onBeforeUnmount(() => {
                   <div class="col-6">
                     <label class="form-label form-label-sm">Height</label>
                     <input
+                      v-model.number="bedHeight"
                       type="number"
                       class="form-control"
-                      v-model.number="bedHeight"
                       step="1"
                       min="1"
                     />
@@ -498,13 +498,13 @@ onBeforeUnmount(() => {
                 </div>
 
                 <label class="form-label mt-3" title="{START_SAFE_Z}">Start Safe Z</label>
-                <input type="number" class="form-control" v-model="startSafeZ" step="0.1" />
+                <input v-model="startSafeZ" type="number" class="form-control" step="0.1" />
 
                 <label class="form-label mt-3" title="{MULTIPLIER}">Solder Feed Multiplier</label>
                 <input
+                  v-model="solderFeedMultiplier"
                   type="number"
                   class="form-control"
-                  v-model="solderFeedMultiplier"
                   step="0.1"
                 />
               </div>
@@ -525,22 +525,22 @@ onBeforeUnmount(() => {
                 <h5><i class="fa-solid fa-crosshairs"></i> Per Point G-code</h5>
 
                 <label class="form-label mt-3" title="{PRIME}">Solder Prime</label>
-                <input type="number" class="form-control" v-model="feedPrime" step="0.1" />
+                <input v-model="feedPrime" type="number" class="form-control" step="0.1" />
 
                 <label class="form-label mt-3" title="{PRIME_RETRACT}">Solder Prime Retract</label>
-                <input type="number" class="form-control" v-model="feedRetract" step="0.1" />
+                <input v-model="feedRetract" type="number" class="form-control" step="0.1" />
 
                 <label class="form-label mt-3" title="{SOLDER_OFFSET}">Solder Offset</label>
-                <input type="number" class="form-control" v-model="solderOffset" step="0.1" />
+                <input v-model="solderOffset" type="number" class="form-control" step="0.1" />
 
                 <label class="form-label mt-3" title="{RETRACT}">Solder Retract</label>
-                <input type="number" class="form-control" v-model="retractAfterSolder" step="0.1" />
+                <input v-model="retractAfterSolder" type="number" class="form-control" step="0.1" />
 
                 <label class="form-label mt-3" title="{SOLDER_SAFE_Z}">Solder Prime Z</label>
-                <input type="number" class="form-control" v-model="solderPrimeZ" step="0.1" />
+                <input v-model="solderPrimeZ" type="number" class="form-control" step="0.1" />
 
                 <label class="form-label mt-3" title="{SOLDER_SAFE_Z}">Solder Safe Z</label>
-                <input type="number" class="form-control" v-model="solderSafeZ" step="0.1" />
+                <input v-model="solderSafeZ" type="number" class="form-control" step="0.1" />
 
                 <label
                   class="form-label mt-3"
@@ -548,9 +548,9 @@ onBeforeUnmount(() => {
                   >Left Move Warning Distance (mm)</label
                 >
                 <input
+                  v-model.number="leftMoveWarningDistance"
                   type="number"
                   class="form-control"
-                  v-model.number="leftMoveWarningDistance"
                   step="0.5"
                   min="0"
                 />
@@ -592,20 +592,20 @@ onBeforeUnmount(() => {
 
                 <label class="form-label mt-3">Hole Count Interval (0 = disabled)</label>
                 <input
+                  v-model="periodicHoleCount"
                   type="number"
                   class="form-control"
-                  v-model="periodicHoleCount"
                   step="1"
                   min="0"
                 />
 
                 <div class="form-check mt-3">
-                  <input class="form-check-input" type="checkbox" v-model="periodicAtStart" />
+                  <input v-model="periodicAtStart" class="form-check-input" type="checkbox" />
                   <label class="form-check-label">Run before first hole</label>
                 </div>
 
                 <div class="form-check mt-3">
-                  <input class="form-check-input" type="checkbox" v-model="periodicAtEnd" />
+                  <input v-model="periodicAtEnd" class="form-check-input" type="checkbox" />
                   <label class="form-check-label">Run after last hole</label>
                 </div>
               </div>
@@ -623,10 +623,10 @@ onBeforeUnmount(() => {
               <div class="col-md-6">
                 <h5><i class="fa-solid fa-stop"></i> End G-code</h5>
                 <label class="form-label" title="{END_SAFE_Z}">End Safe Z</label>
-                <input type="number" class="form-control" v-model="endSafeZ" step="0.1" />
+                <input v-model="endSafeZ" type="number" class="form-control" step="0.1" />
 
                 <div class="form-check mt-3">
-                  <input class="form-check-input" type="checkbox" v-model="playBeep" />
+                  <input v-model="playBeep" class="form-check-input" type="checkbox" />
                   <label class="form-check-label" title="{BEEP}">Play Beep</label>
                 </div>
               </div>

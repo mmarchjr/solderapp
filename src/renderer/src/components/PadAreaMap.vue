@@ -1,6 +1,6 @@
 <template>
   <div class="pad-area-map-wrapper">
-    <div class="pad-area-map-legend mb-2" v-if="legendEntries.length > 0">
+    <div v-if="legendEntries.length > 0" class="pad-area-map-legend mb-2">
       <div class="fw-semibold small mb-1">Legend (area)</div>
       <div class="d-flex flex-wrap gap-2">
         <div
@@ -15,7 +15,7 @@
     </div>
     <div v-else class="text-muted small fst-italic mb-2">No holes above current via filter.</div>
 
-    <div class="pad-area-map-canvas-container" ref="containerRef">
+    <div ref="containerRef" class="pad-area-map-canvas-container">
       <canvas
         ref="canvasRef"
         class="pad-area-map-canvas"
@@ -28,8 +28,8 @@
       ></canvas>
       <button
         class="btn btn-sm btn-outline-dark pad-area-map-reset"
-        @click="fitToPads"
         title="Reset view"
+        @click="fitToPads"
       >
         <i class="fa-solid fa-expand"></i>
       </button>

@@ -7,11 +7,11 @@
 
       <!-- Hidden File Input -->
       <input
-        type="file"
         ref="fileInput"
+        type="file"
         class="d-none"
-        @change="handleFiles"
         accept=".drl,.txt,.json,.zip,.gbr,.gtl,.gbl,.gts,.gbs,.gto,.gbo,.gtp,.gbp,.gko,.gml,.gm1"
+        @change="handleFiles"
       />
     </div>
   </div>

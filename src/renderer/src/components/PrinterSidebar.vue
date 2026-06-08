@@ -243,13 +243,13 @@ onUnmounted(() => {
         </h6>
         <div class="jog-layout">
           <JogWheel
-            :stepSize="currentStep"
+            :step-size="currentStep"
             :disabled="!printer.connected || !printer.homed || printer.printing"
             @jog="handleJog"
           />
           <JogBar
-            :stepSize="currentStep"
-            :currentZ="printer.position.z"
+            :step-size="currentStep"
+            :current-z="printer.position.z"
             :disabled="!printer.connected || !printer.homed || printer.printing"
             @jog="handleJogZ"
           />
@@ -268,36 +268,36 @@ onUnmounted(() => {
         <div class="preset-buttons mt-2">
           <button
             class="btn btn-sm btn-outline-secondary"
-            @click="printerCtrl.moveToPreset('front-left')"
             :disabled="!printer.connected || !printer.homed"
+            @click="printerCtrl.moveToPreset('front-left')"
           >
             FL
           </button>
           <button
             class="btn btn-sm btn-outline-secondary"
-            @click="printerCtrl.moveToPreset('front-right')"
             :disabled="!printer.connected || !printer.homed"
+            @click="printerCtrl.moveToPreset('front-right')"
           >
             FR
           </button>
           <button
             class="btn btn-sm btn-outline-secondary"
-            @click="printerCtrl.moveToPreset('back-left')"
             :disabled="!printer.connected || !printer.homed"
+            @click="printerCtrl.moveToPreset('back-left')"
           >
             BL
           </button>
           <button
             class="btn btn-sm btn-outline-secondary"
-            @click="printerCtrl.moveToPreset('back-right')"
             :disabled="!printer.connected || !printer.homed"
+            @click="printerCtrl.moveToPreset('back-right')"
           >
             BR
           </button>
           <button
             class="btn btn-sm btn-outline-secondary"
-            @click="printerCtrl.moveToPreset('center')"
             :disabled="!printer.connected || !printer.homed"
+            @click="printerCtrl.moveToPreset('center')"
           >
             Center
           </button>
@@ -347,12 +347,12 @@ onUnmounted(() => {
             Feed Override: {{ feedOverride }}%
           </label>
           <input
+            v-model.number="feedOverride"
             type="range"
             class="form-range"
             min="0"
             max="200"
             step="5"
-            v-model.number="feedOverride"
             @change="handleFeedOverride"
           />
         </div>
@@ -365,16 +365,16 @@ onUnmounted(() => {
           <button
             class="btn btn-sm"
             :class="selectedTool === 'jog-to-point' ? 'btn-primary' : 'btn-outline-secondary'"
-            @click="toggleTool('jog-to-point')"
             :disabled="!printer.connected || !printer.homed || printer.printing"
+            @click="toggleTool('jog-to-point')"
           >
             <i class="fa-solid fa-arrows-up-down-left-right me-1"></i> Jog to Point
           </button>
           <button
             class="btn btn-sm"
             :class="selectedTool === 'solder-point' ? 'btn-warning' : 'btn-outline-secondary'"
-            @click="toggleTool('solder-point')"
             :disabled="!printer.connected || !printer.homed || printer.printing"
+            @click="toggleTool('solder-point')"
           >
             <i class="fa-solid fa-fire me-1"></i> Solder Point
           </button>

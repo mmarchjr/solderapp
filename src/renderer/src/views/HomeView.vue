@@ -17,9 +17,9 @@ provide('activeTab', activeTab)
 
 <template>
   <div class="home-view">
-    <Header :activeTab="activeTab" @switch-tab="activeTab = $event" />
+    <Header :active-tab="activeTab" @switch-tab="activeTab = $event" />
     <PrintStatus v-if="printerCtrl.printer.printing" />
-    <ToolpathEditor v-if="activeTab === 'path'" :readOnly="printerCtrl.printer.printing" />
+    <ToolpathEditor v-if="activeTab === 'path'" :read-only="printerCtrl.printer.printing" />
     <PrintTab v-if="activeTab === 'print'" />
     <MachineConfig />
   </div>

@@ -55,6 +55,7 @@ defineExpose({ loadPorts })
 <template>
   <Teleport to="body">
     <div
+      ref="modalEl"
       style="
         position: fixed;
         top: 0;
@@ -67,10 +68,9 @@ defineExpose({ loadPorts })
         justify-content: center;
         z-index: 2000;
       "
+      tabindex="0"
       @click.self="$emit('cancel')"
       @keydown="handleKeydown"
-      tabindex="0"
-      ref="modalEl"
     >
       <div class="modal-dialog modal-dialog-centered" style="max-width: 480px; margin: 2rem">
         <div
@@ -129,8 +129,8 @@ defineExpose({ loadPorts })
             <button
               type="button"
               class="btn btn-outline-primary btn-sm"
-              @click="loadPorts"
               :disabled="loading"
+              @click="loadPorts"
             >
               <i class="fa-solid fa-rotate me-1"></i> Refresh
             </button>

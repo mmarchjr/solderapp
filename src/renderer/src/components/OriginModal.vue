@@ -108,10 +108,10 @@ defineExpose({ open })
                 </div>
               </div>
               <div class="jog-controls-row">
-                <JogWheel :stepSize="currentStep" :disabled="!isHomed" @jog="handleJogXY" />
+                <JogWheel :step-size="currentStep" :disabled="!isHomed" @jog="handleJogXY" />
                 <JogBar
-                  :stepSize="currentStep"
-                  :currentZ="localPosition.z"
+                  :step-size="currentStep"
+                  :current-z="localPosition.z"
                   :disabled="!isHomed"
                   @jog="handleJogZ"
                 />

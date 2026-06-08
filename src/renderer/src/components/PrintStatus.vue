@@ -11,7 +11,7 @@ function formatTime(seconds) {
 </script>
 
 <template>
-  <div class="print-status-bar" v-if="printer.printing">
+  <div v-if="printer.printing" class="print-status-bar">
     <div class="status-content">
       <span class="status-label">
         <i class="fa-solid fa-print me-1"></i>

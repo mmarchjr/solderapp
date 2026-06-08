@@ -23,7 +23,7 @@
           </button>
         </div>
 
-        <UploadDrillFile v-if="activeTab === 'path'" @openZip="handleZipFile" />
+        <UploadDrillFile v-if="activeTab === 'path'" @open-zip="handleZipFile" />
         <button
           v-if="drillStore.pcbs.length > 0 && activeTab === 'path'"
           class="btn btn-outline-light btn-sm nav-link"
@@ -52,7 +52,7 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <div id="navbarNav" class="collapse navbar-collapse justify-content-end">
           <ul class="navbar-nav"></ul>
         </div>
       </div>

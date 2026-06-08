@@ -1,4 +1,4 @@
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 
 const isConnected = ref(false)
 const portName = ref('')
@@ -57,22 +57,30 @@ async function disconnect() {
   if (reader.value) {
     try {
       await reader.value.cancel()
-    } catch {}
+    } catch {
+      throw new Error('Failed to cancel reader')
+    }
     try {
       reader.value.releaseLock()
-    } catch {}
+    } catch {
+      throw new Error('Failed to release reader lock')
+    }
     reader.value = null
   }
   if (writer.value) {
     try {
       writer.value.releaseLock()
-    } catch {}
+    } catch {
+      throw new Error('Failed to release writer lock')
+    }
     writer.value = null
   }
   if (port.value) {
     try {
       await port.value.close()
-    } catch {}
+    } catch {
+      throw new Error('Failed to close port')
+    }
     port.value = null
   }
 

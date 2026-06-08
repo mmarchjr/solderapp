@@ -1,6 +1,6 @@
 <template>
   <!-- Import Wizard Modal -->
-  <div class="modal fade" ref="modalEl" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div ref="modalEl" class="modal fade" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header bg-dark text-white">
@@ -10,16 +10,16 @@
           <button
             type="button"
             class="btn-close btn-close-white"
-            @click="close"
             :disabled="importing"
+            @click="close"
           ></button>
         </div>
         <div class="modal-body">
           <!-- Loading / Importing state -->
           <div v-if="loading || importing" class="py-3">
             <div class="d-flex align-items-center mb-3">
-              <div class="spinner-border text-primary me-3" role="status" v-if="!importDone"></div>
-              <i class="fa-solid fa-circle-check text-success fa-2x me-3" v-else></i>
+              <div v-if="!importDone" class="spinner-border text-primary me-3" role="status"></div>
+              <i v-else class="fa-solid fa-circle-check text-success fa-2x me-3"></i>
               <div>
                 <h6 class="mb-0">{{ progressTitle }}</h6>
                 <small class="text-muted">{{ progressSubtitle }}</small>
@@ -39,9 +39,9 @@
                 }"
               >
                 <span class="step-icon me-2 mt-1">
-                  <i class="fa-solid fa-circle-check" v-if="step.status === 'done'"></i>
-                  <i class="fa-solid fa-spinner fa-spin" v-else-if="step.status === 'active'"></i>
-                  <i class="fa-regular fa-circle" v-else></i>
+                  <i v-if="step.status === 'done'" class="fa-solid fa-circle-check"></i>
+                  <i v-else-if="step.status === 'active'" class="fa-solid fa-spinner fa-spin"></i>
+                  <i v-else class="fa-regular fa-circle"></i>
                 </span>
                 <span>{{ step.label }}</span>
               </div>
@@ -71,12 +71,12 @@
                 <i class="fa-solid fa-circle-dot me-1"></i> Drill Files
                 <span class="badge bg-secondary ms-1">{{ drillFiles.length }}</span>
               </h6>
-              <div class="form-check" v-for="f in drillFiles" :key="f.name">
+              <div v-for="f in drillFiles" :key="f.name" class="form-check">
                 <input
-                  class="form-check-input"
-                  type="checkbox"
                   :id="'drill-' + f.name"
                   v-model="f.selected"
+                  class="form-check-input"
+                  type="checkbox"
                 />
                 <label class="form-check-label" :for="'drill-' + f.name">
                   <code>{{ f.name }}</code>
@@ -91,13 +91,13 @@
                 <i class="fa-solid fa-vector-square me-1"></i> Board Outline Files
                 <span class="badge bg-secondary ms-1">{{ outlineFiles.length }}</span>
               </h6>
-              <div class="form-check" v-for="f in outlineFiles" :key="f.name">
+              <div v-for="f in outlineFiles" :key="f.name" class="form-check">
                 <input
+                  :id="'outline-' + f.name"
+                  v-model="selectedOutlineName"
                   class="form-check-input"
                   type="radio"
-                  :id="'outline-' + f.name"
                   name="outline-file"
-                  v-model="selectedOutlineName"
                   :value="f.name"
                 />
                 <label class="form-check-label" :for="'outline-' + f.name">
@@ -107,11 +107,11 @@
               </div>
               <div class="form-check">
                 <input
+                  id="outline-none"
+                  v-model="selectedOutlineName"
                   class="form-check-input"
                   type="radio"
-                  id="outline-none"
                   name="outline-file"
-                  v-model="selectedOutlineName"
                   value=""
                 />
                 <label class="form-check-label" for="outline-none">
@@ -125,20 +125,20 @@
               <h6
                 class="text-secondary"
                 role="button"
-                @click="showOther = !showOther"
                 style="cursor: pointer"
+                @click="showOther = !showOther"
               >
                 <i class="fa-solid" :class="showOther ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
                 Other Files
                 <span class="badge bg-secondary ms-1">{{ otherFiles.length }}</span>
               </h6>
               <div v-if="showOther" class="ms-3">
-                <div class="form-check text-muted" v-for="f in otherFiles" :key="f.name">
+                <div v-for="f in otherFiles" :key="f.name" class="form-check text-muted">
                   <input
-                    class="form-check-input"
-                    type="checkbox"
                     :id="'other-' + f.name"
                     v-model="f.selected"
+                    class="form-check-input"
+                    type="checkbox"
                   />
                   <label class="form-check-label" :for="'other-' + f.name">
                     <code>{{ f.name }}</code>
@@ -159,7 +159,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="close" :disabled="importing">
+          <button type="button" class="btn btn-secondary" :disabled="importing" @click="close">
             {{ importing ? 'Importing...' : 'Cancel' }}
           </button>
           <button

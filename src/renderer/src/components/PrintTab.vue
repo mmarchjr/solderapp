@@ -37,37 +37,37 @@ function handleToolSelect(tool) {
         Print in progress — editing disabled
       </div>
       <div class="canvas-container">
-        <PrintCanvas :selectedTool="selectedTool" @point-click="handlePointClick" />
+        <PrintCanvas :selected-tool="selectedTool" @point-click="handlePointClick" />
       </div>
       <div class="tool-bar">
         <button
           class="btn btn-sm"
           :class="selectedTool === 'jog-to-point' ? 'btn-primary' : 'btn-outline-secondary'"
-          @click="handleToolSelect('jog-to-point')"
           :disabled="
             !printerCtrl.printer.connected ||
             !printerCtrl.printer.homed ||
             printerCtrl.printer.printing
           "
+          @click="handleToolSelect('jog-to-point')"
         >
           <i class="fa-solid fa-arrows-up-down-left-right me-1"></i> Jog to Point
         </button>
         <button
           class="btn btn-sm"
           :class="selectedTool === 'solder-point' ? 'btn-warning' : 'btn-outline-secondary'"
-          @click="handleToolSelect('solder-point')"
           :disabled="
             !printerCtrl.printer.connected ||
             !printerCtrl.printer.homed ||
             printerCtrl.printer.printing
           "
+          @click="handleToolSelect('solder-point')"
         >
           <i class="fa-solid fa-fire me-1"></i> Solder Point
         </button>
       </div>
     </div>
     <PrinterSidebar
-      :selectedTool="selectedTool"
+      :selected-tool="selectedTool"
       @jog-to-point="selectedTool = 'jog-to-point'"
       @solder-point="selectedTool = 'solder-point'"
     />

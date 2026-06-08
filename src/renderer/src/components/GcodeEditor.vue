@@ -23,12 +23,12 @@
       <pre><code ref="codeBlock" class="language-gcode">{{ code }}</code></pre>
     </div>
     <div v-else>
-      <textarea class="form-control" v-model="editableCode" rows="10"></textarea>
+      <textarea v-model="editableCode" class="form-control" rows="10"></textarea>
     </div>
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, watch, onMounted, nextTick } from 'vue'
 import hljs from 'highlight.js/lib/core'
 
