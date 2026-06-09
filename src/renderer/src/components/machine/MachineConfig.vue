@@ -178,6 +178,11 @@ const leftMoveWarningDistance = computed({
   set: (val) => drillStore.updateCurrentProfileSettings({ leftMoveWarningDistance: val })
 })
 
+const leftMoveYTolerance = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].leftMoveYTolerance ?? 5,
+  set: (val) => drillStore.updateCurrentProfileSettings({ leftMoveYTolerance: val })
+})
+
 function resetToDefaults() {
   drillStore.resetCurrentProfileToDefault()
 }
@@ -239,8 +244,8 @@ function importSettings(event) {
   reader.readAsText(file)
 }
 
-const splineRows = ref([])
-const splineContextMenu = ref({
+const lagrangeRows = ref([])
+const lagrangeContextMenu = ref({
   visible: false,
   rowIndex: -1,
   x: 0,
@@ -252,7 +257,7 @@ function toNumberOrDefault(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-function normalizeSplineRows(rows) {
+function normalizeLagrangeRows(rows) {
   const byArea = new Map()
   const sortedRows = [...rows].sort((a, b) => toNumberOrDefault(a.area) - toNumberOrDefault(b.area))
 
@@ -274,7 +279,7 @@ function normalizeSplineRows(rows) {
   return normalized
 }
 
-function buildSplineRowsFromStore(curves) {
+function buildLagrangeRowsFromStore(curves) {
   const soakCurve = curves?.soak ?? []
   const feedCurve = curves?.feed ?? []
   const dwellCurve = curves?.dwell ?? []
@@ -307,50 +312,50 @@ function buildSplineRowsFromStore(curves) {
   }))
 }
 
-function syncSplineRowsFromStore() {
-  splineRows.value = buildSplineRowsFromStore(drillStore.splineCurves)
+function syncLagrangeRowsFromStore() {
+  lagrangeRows.value = buildLagrangeRowsFromStore(drillStore.lagrangeCurves)
 }
 
-function saveSplineRowsToStore() {
-  const normalized = normalizeSplineRows(splineRows.value)
-  splineRows.value = normalized
-  drillStore.splineCurves = {
+function saveLagrangeRowsToStore() {
+  const normalized = normalizeLagrangeRows(lagrangeRows.value)
+  lagrangeRows.value = normalized
+  drillStore.lagrangeCurves = {
     soak: normalized.map((row) => ({ area: row.area, value: row.soak })),
     feed: normalized.map((row) => ({ area: row.area, value: row.feed })),
     dwell: normalized.map((row) => ({ area: row.area, value: row.dwell }))
   }
 }
 
-function updateSplineCell(index, key, value) {
-  if (!splineRows.value[index]) return
-  splineRows.value[index][key] = toNumberOrDefault(value)
-  saveSplineRowsToStore()
+function updateLagrangeCell(index, key, value) {
+  if (!lagrangeRows.value[index]) return
+  lagrangeRows.value[index][key] = toNumberOrDefault(value)
+  saveLagrangeRowsToStore()
 }
 
-function addSplineRowBelow(index) {
-  const current = splineRows.value[index]
-  const next = splineRows.value[index + 1]
+function addLagrangeRowBelow(index) {
+  const current = lagrangeRows.value[index]
+  const next = lagrangeRows.value[index + 1]
   const newArea = next
     ? (toNumberOrDefault(current.area) + toNumberOrDefault(next.area)) / 2
     : toNumberOrDefault(current.area) + 1
-  splineRows.value.splice(index + 1, 0, {
+  lagrangeRows.value.splice(index + 1, 0, {
     area: Math.max(0, newArea),
     soak: toNumberOrDefault(current.soak),
     feed: toNumberOrDefault(current.feed),
     dwell: toNumberOrDefault(current.dwell)
   })
-  saveSplineRowsToStore()
+  saveLagrangeRowsToStore()
 }
 
-function deleteSplineRow(index) {
-  if (splineRows.value.length <= 1) return
-  splineRows.value.splice(index, 1)
-  saveSplineRowsToStore()
+function deleteLagrangeRow(index) {
+  if (lagrangeRows.value.length <= 1) return
+  lagrangeRows.value.splice(index, 1)
+  saveLagrangeRowsToStore()
 }
 
-function openSplineContextMenu(event, rowIndex) {
+function openLagrangeContextMenu(event, rowIndex) {
   event.preventDefault()
-  splineContextMenu.value = {
+  lagrangeContextMenu.value = {
     visible: true,
     rowIndex,
     x: event.clientX,
@@ -358,19 +363,19 @@ function openSplineContextMenu(event, rowIndex) {
   }
 }
 
-function hideSplineContextMenu() {
-  if (!splineContextMenu.value.visible) return
-  splineContextMenu.value.visible = false
+function hideLagrangeContextMenu() {
+  if (!lagrangeContextMenu.value.visible) return
+  lagrangeContextMenu.value.visible = false
 }
 
 function handleGlobalClick() {
-  hideSplineContextMenu()
+  hideLagrangeContextMenu()
 }
 
 watch(
-  () => drillStore.splineCurves,
+  () => drillStore.lagrangeCurves,
   () => {
-    syncSplineRowsFromStore()
+    syncLagrangeRowsFromStore()
   },
   { deep: true, immediate: true }
 )
@@ -558,6 +563,23 @@ onBeforeUnmount(() => {
                   Set to 0 to disable. Warns when the nozzle moves left between pads closer than
                   this distance, which may bridge solder.
                 </div>
+
+                <label
+                  class="form-label mt-3"
+                  title="Maximum Y-axis difference between pads for the left-move warning. Only warns about leftward moves between pads whose centers are within this vertical tolerance."
+                  >Left Move Y Tolerance (mm)</label
+                >
+                <input
+                  v-model.number="leftMoveYTolerance"
+                  type="number"
+                  class="form-control"
+                  step="0.5"
+                  min="0"
+                />
+                <div class="form-text">
+                  Only flag leftward moves between pads whose Y centers are within this distance.
+                  Pads at very different heights are less likely to bridge.
+                </div>
               </div>
 
               <div class="col-md-6">
@@ -641,12 +663,12 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <!-- Spline Table -->
+            <!-- Lagrange Table -->
             <div class="row mt-4">
               <div class="col-12">
                 <h5><i class="fa-solid fa-table"></i> Pad Area Parameter Table</h5>
                 <p class="text-muted small">
-                  Map pad area (mm²) to soak/feed/dwell values. Interpolation is still applied
+                  Map pad area (mm²) to soak/feed/dwell values. Lagrange interpolation is applied
                   between rows during G-code generation. Right-click a row to add one below it or
                   delete it.
                 </p>
@@ -658,7 +680,7 @@ onBeforeUnmount(() => {
 
               <div class="col-md-5">
                 <div class="table-responsive">
-                  <table class="table table-sm table-bordered align-middle mb-0 spline-table">
+                  <table class="table table-sm table-bordered align-middle mb-0 lagrange-table">
                     <thead class="table-light">
                       <tr>
                         <th>Pad Area (mm²)</th>
@@ -669,9 +691,9 @@ onBeforeUnmount(() => {
                     </thead>
                     <tbody>
                       <tr
-                        v-for="(row, index) in splineRows"
-                        :key="`spline-row-${index}`"
-                        @contextmenu="openSplineContextMenu($event, index)"
+                        v-for="(row, index) in lagrangeRows"
+                        :key="`lagrange-row-${index}`"
+                        @contextmenu="openLagrangeContextMenu($event, index)"
                       >
                         <td>
                           <input
@@ -680,7 +702,7 @@ onBeforeUnmount(() => {
                             :value="row.area"
                             step="0.1"
                             min="0"
-                            @change="updateSplineCell(index, 'area', $event.target.valueAsNumber)"
+                            @change="updateLagrangeCell(index, 'area', $event.target.valueAsNumber)"
                           />
                         </td>
                         <td>
@@ -689,7 +711,7 @@ onBeforeUnmount(() => {
                             class="form-control form-control-sm"
                             :value="row.soak"
                             step="0.1"
-                            @change="updateSplineCell(index, 'soak', $event.target.valueAsNumber)"
+                            @change="updateLagrangeCell(index, 'soak', $event.target.valueAsNumber)"
                           />
                         </td>
                         <td>
@@ -698,7 +720,7 @@ onBeforeUnmount(() => {
                             class="form-control form-control-sm"
                             :value="row.feed"
                             step="0.1"
-                            @change="updateSplineCell(index, 'feed', $event.target.valueAsNumber)"
+                            @change="updateLagrangeCell(index, 'feed', $event.target.valueAsNumber)"
                           />
                         </td>
                         <td>
@@ -707,7 +729,7 @@ onBeforeUnmount(() => {
                             class="form-control form-control-sm"
                             :value="row.dwell"
                             step="0.1"
-                            @change="updateSplineCell(index, 'dwell', $event.target.valueAsNumber)"
+                            @change="updateLagrangeCell(index, 'dwell', $event.target.valueAsNumber)"
                           />
                         </td>
                       </tr>
@@ -717,22 +739,22 @@ onBeforeUnmount(() => {
               </div>
 
               <div
-                v-if="splineContextMenu.visible"
-                class="spline-context-menu"
-                :style="{ top: `${splineContextMenu.y}px`, left: `${splineContextMenu.x}px` }"
+                v-if="lagrangeContextMenu.visible"
+                class="lagrange-context-menu"
+                :style="{ top: `${lagrangeContextMenu.y}px`, left: `${lagrangeContextMenu.x}px` }"
               >
                 <button
                   type="button"
                   class="dropdown-item"
-                  @click="addSplineRowBelow(splineContextMenu.rowIndex); hideSplineContextMenu()"
+                  @click="addLagrangeRowBelow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
                 >
                   <i class="fa-solid fa-plus me-2"></i>Add Row Below
                 </button>
                 <button
                   type="button"
                   class="dropdown-item text-danger"
-                  :disabled="splineRows.length <= 1"
-                  @click="deleteSplineRow(splineContextMenu.rowIndex); hideSplineContextMenu()"
+                  :disabled="lagrangeRows.length <= 1"
+                  @click="deleteLagrangeRow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
                 >
                   <i class="fa-solid fa-trash me-2"></i>Delete Row
                 </button>
@@ -768,11 +790,11 @@ onBeforeUnmount(() => {
   resize: vertical;
 }
 
-.spline-table input {
+.lagrange-table input {
   min-width: 90px;
 }
 
-.spline-context-menu {
+.lagrange-context-menu {
   position: fixed;
   z-index: 1080;
   min-width: 180px;
@@ -783,7 +805,7 @@ onBeforeUnmount(() => {
   padding: 0.25rem 0;
 }
 
-.spline-context-menu .dropdown-item {
+.lagrange-context-menu .dropdown-item {
   width: 100%;
   border: 0;
   background: transparent;
@@ -791,7 +813,7 @@ onBeforeUnmount(() => {
   padding: 0.375rem 0.75rem;
 }
 
-.spline-context-menu .dropdown-item:disabled {
+.lagrange-context-menu .dropdown-item:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

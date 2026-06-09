@@ -391,7 +391,7 @@
               <th title="X position in mm">X</th>
               <th title="Y position in mm">Y</th>
               <th title="Hole diameter (mm)"><i class="fas fa-circle"></i></th>
-              <th title="Pad area (mm²) — used for spline graph lookup">Area</th>
+              <th title="Pad area (mm²) — used for lagrange curve lookup">Area</th>
               <th title="X offset (mm) from drill point"><i class="fas fa-arrows-alt-h"></i> X</th>
               <th title="Y offset (mm) from drill point"><i class="fas fa-arrows-alt-v"></i> Y</th>
               <th title="Z offset (mm) from top of PCB surface">
@@ -507,12 +507,13 @@ const props = defineProps({
 function checkAndWarnRiskyLeftMove(addedId) {
   const profile = drillStore.profiles[drillStore.currentProfile]
   const threshold = profile.leftMoveWarningDistance
+  const yTolerance = profile.leftMoveYTolerance ?? 5
   if (!threshold || threshold <= 0) return true
 
   const points = getSolderPoints()
   if (points.length < 2) return true
 
-  const risky = checkForRiskyLeftMoves(points, threshold)
+  const risky = checkForRiskyLeftMoves(points, threshold, yTolerance)
   const lastMove = risky.find((r) => r.index === points.length - 2)
   if (!lastMove) return true
 
@@ -627,9 +628,10 @@ const saveGcode = () => {
 
     const profile = drillStore.profiles[drillStore.currentProfile]
     const threshold = profile.leftMoveWarningDistance
+    const yTolerance = profile.leftMoveYTolerance ?? 5
     if (threshold > 0) {
       const transformedPoints = getSolderPoints()
-      const risky = checkForRiskyLeftMoves(transformedPoints, threshold)
+      const risky = checkForRiskyLeftMoves(transformedPoints, threshold, yTolerance)
       if (risky.length > 0) {
         const list = risky
           .map(
@@ -663,9 +665,10 @@ const openSimulator = () => {
 
     const profile = drillStore.profiles[drillStore.currentProfile]
     const threshold = profile.leftMoveWarningDistance
+    const yTolerance = profile.leftMoveYTolerance ?? 5
     if (threshold > 0) {
       const transformedPoints = getSolderPoints()
-      const risky = checkForRiskyLeftMoves(transformedPoints, threshold)
+      const risky = checkForRiskyLeftMoves(transformedPoints, threshold, yTolerance)
       if (risky.length > 0) {
         const list = risky
           .map(
@@ -1885,8 +1888,8 @@ const toggleSelect = (id, index, event) => {
   updateCanvas()
 }
 
-const optimizePath = () => {
-  drillStore.optimizePath()
+const optimizePath = async () => {
+  await drillStore.optimizePath(updateCanvas)
   updateCanvas()
 }
 

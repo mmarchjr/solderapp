@@ -175,25 +175,28 @@ export function useFileHandlers() {
 
     if (project.profiles) {
       drillStore.loadProfilesFromProject(project.profiles, project.currentProfile)
-      // Backward compatibility: if old splineCurves exist at root level, merge them into current profile
-      if (project.splineCurves && drillStore.profiles[drillStore.currentProfile]) {
-        drillStore.profiles[drillStore.currentProfile].splineCurves = project.splineCurves
+      // Backward compatibility: if old splineCurves exist at root level, merge them into current profile as lagrangeCurves
+      const curves = project.lagrangeCurves || project.splineCurves
+      if (curves && drillStore.profiles[drillStore.currentProfile]) {
+        drillStore.profiles[drillStore.currentProfile].lagrangeCurves = curves
         drillStore.saveProfilesToStorage()
       }
     } else if (project.currentProfile && project.profileSettings) {
       const profiles = {
         [project.currentProfile]: project.profileSettings
       }
-      // Add splineCurves if they exist in the project
-      if (project.splineCurves) {
-        profiles[project.currentProfile].splineCurves = project.splineCurves
+      // Add lagrangeCurves if they exist in the project (or legacy splineCurves)
+      const curves = project.lagrangeCurves || project.splineCurves
+      if (curves) {
+        profiles[project.currentProfile].lagrangeCurves = curves
       }
       drillStore.loadProfilesFromProject(profiles, project.currentProfile)
     } else {
       drillStore.initProfiles()
-      // Backward compatibility: if old splineCurves exist, set them in current profile
-      if (project.splineCurves && drillStore.profiles[drillStore.currentProfile]) {
-        drillStore.profiles[drillStore.currentProfile].splineCurves = project.splineCurves
+      // Backward compatibility: if old splineCurves exist, set them in current profile as lagrangeCurves
+      const curves = project.lagrangeCurves || project.splineCurves
+      if (curves && drillStore.profiles[drillStore.currentProfile]) {
+        drillStore.profiles[drillStore.currentProfile].lagrangeCurves = curves
         drillStore.saveProfilesToStorage()
       }
     }
@@ -255,11 +258,11 @@ export function useFileHandlers() {
     }))
 
     const project = {
-      version: 2,
+      version: 3,
       pcbs: pcbsData,
       activePcbId: drillStore.activePcbId,
       globalNoGoZones: drillStore.globalNoGoZones,
-      splineCurves: drillStore.splineCurves,
+      lagrangeCurves: drillStore.lagrangeCurves,
       currentProfile: drillStore.currentProfile,
       profiles: drillStore.profiles
     }

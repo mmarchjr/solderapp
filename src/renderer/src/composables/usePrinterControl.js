@@ -457,9 +457,9 @@ export function usePrinterControl() {
 
     const point = solderPoints[pointIndex]
     const padArea = Math.PI * Math.pow(parseFloat(point.size) / 2, 2)
-    const soakCurve = drillStore.splineCurves.soak
-    const feedCurve = drillStore.splineCurves.feed
-    const dwellCurve = drillStore.splineCurves.dwell
+    const soakCurve = drillStore.lagrangeCurves.soak
+    const feedCurve = drillStore.lagrangeCurves.feed
+    const dwellCurve = drillStore.lagrangeCurves.dwell
 
     const vars = {
       INDEX: 0,
@@ -472,15 +472,15 @@ export function usePrinterControl() {
       Z_OFFSET: (point.zOffset ?? 0) + (point.originOffsetZ ?? 0),
       SOAK:
         soakCurve.length > 0
-          ? (gcodeGen.interpolateSpline?.(soakCurve, padArea) ?? point.soak)
+          ? (gcodeGen.interpolateLagrange?.(soakCurve, padArea) ?? point.soak)
           : point.soak,
       FEED:
         feedCurve.length > 0
-          ? (gcodeGen.interpolateSpline?.(feedCurve, padArea) ?? point.feed)
+          ? (gcodeGen.interpolateLagrange?.(feedCurve, padArea) ?? point.feed)
           : point.feed,
       DWELL:
         dwellCurve.length > 0
-          ? (gcodeGen.interpolateSpline?.(dwellCurve, padArea) ?? point.dwell)
+          ? (gcodeGen.interpolateLagrange?.(dwellCurve, padArea) ?? point.dwell)
           : point.dwell,
       PRIME: profile.feedPrime ?? 0,
       PRIME_RETRACT: profile.feedRetract ?? 0,
