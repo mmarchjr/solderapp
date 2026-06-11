@@ -22,9 +22,17 @@
 
 **Path** — The ordered sequence of drill point IDs to be soldered. Built per-PCB, executed across all PCBs during printing.
 
-**Path Optimization** — Nearest-neighbor algorithm with no-go zone avoidance. Finds the shortest route through all solder-flagged points.
+**Path Optimization** — DFS (depth-first search) with left-move constraint pruning. For boards with >15 solder points, auto-clusters points using k-means, then optimizes each cluster independently with DFS, then optimizes cluster order with DFS on centroids. Runs in a worker thread for performance.
 
 **Solder Point** — A drill point flagged for soldering (has `solder: true`). Points not in the path are skipped during printing.
+
+## Clustering Concepts
+
+**Auto-Clustering** — Automatic board sectioning using k-means algorithm. Triggered when solder point count exceeds 15. Groups nearby points into clusters of ~8 points each for independent optimization.
+
+**Soft Boundary** — Points within a configurable distance (default 5mm) of an adjacent cluster are shared between clusters. This prevents suboptimal paths at cluster edges.
+
+**Cluster Order** — The sequence in which optimized clusters are visited. Optimized using BFS on cluster centroids to find the shortest route between clusters.
 
 ## G-code Concepts
 
@@ -73,3 +81,9 @@
 **Jog Bar** — Vertical Z-axis control with linear layers (0.1, 1, 5, 10, 50mm).
 
 **Origin Modal** — Per-PCB modal for setting the origin. Requires homing first, then jogging to the target position.
+
+**Calibrate Tab** — Standalone tab between Path and Print for calibrating solder feed and per-pad offsets. Three-column layout: pad size list (left), PCB canvas (center), extrude bar + jog controls (right). Requires printer connection. Updates Lagrange curves on confirm.
+
+**Feed Calibration** — Process of determining the correct solder extrusion amount for a given pad size. User runs the solder sequence up to the feed step, then manually extrudes via a slider bar until the joint looks right. The calibrated value is stored in the Lagrange curve at that pad's area.
+
+**Offset Calibration** — Process of determining the correct X/Y/Z offset for a specific pad. User jogs to the pad position (elevated), then jogs down to the correct position. The delta is saved as the pad's offset in the Lagrange curve.

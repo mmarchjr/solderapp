@@ -4,6 +4,7 @@ import Header from '@/components/ui/Header.vue'
 import ToolpathEditor from '@/components/gcode/ToolpathEditor.vue'
 import MachineConfig from '@/components/machine/MachineConfig.vue'
 import PrintTab from '@/components/printing/PrintTab.vue'
+import CalibrateTab from '@/components/calibrate/CalibrateTab.vue'
 import PrintStatus from '@/components/printing/PrintStatus.vue'
 import { useDrillStore } from '@/stores/store'
 import { usePrinterControl } from '@/composables/usePrinterControl'
@@ -21,6 +22,7 @@ provide('activeTab', activeTab)
     <PrintStatus v-if="printerCtrl.printer.printing" />
     <ToolpathEditor v-if="activeTab === 'path'" :read-only="printerCtrl.printer.printing" />
     <PrintTab v-if="activeTab === 'print'" />
+    <CalibrateTab v-if="activeTab === 'calibrate'" />
     <MachineConfig />
   </div>
 </template>

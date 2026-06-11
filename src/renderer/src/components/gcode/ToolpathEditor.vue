@@ -106,6 +106,19 @@
         @wheel.prevent="handleZoom"
         @contextmenu.prevent
       ></canvas>
+      <OptimizerProgress
+        :visible="drillStore.optimizerState.running"
+        :best-cost="drillStore.optimizerState.bestCost"
+        :current-depth="drillStore.optimizerState.currentDepth"
+        :total-layers="drillStore.optimizerState.totalLayers"
+        :clusters-done="drillStore.optimizerState.clustersDone"
+        :total-clusters="drillStore.optimizerState.totalClusters"
+        :active-cluster="drillStore.optimizerState.activeCluster"
+        :cluster-colors="drillStore.optimizerState.clusterColors"
+        @stop="drillStore.pauseOptimizer()"
+        @resume="drillStore.resumeOptimizer()"
+        @cancel="drillStore.cancelOptimizer()"
+      />
       <div class="editor-instructions">
         <transition name="fade" mode="out-in">
           <div
@@ -323,7 +336,7 @@
 
             <div v-if="!printer.connected || !printer.homed" class="text-center my-3">
               <p class="text-muted mb-2">Printer must be connected and homed</p>
-              <button class="btn btn-primary" :disabled="!printer.connected" @click="handleHome">
+              <button class="btn btn-primary" :disabled="!printer.connected || printer.isHoming || printer.isHomeCoolingDown" @click="handleHome">
                 <i class="fa-solid fa-house me-1"></i> Home (G28)
               </button>
             </div>
@@ -496,6 +509,7 @@ import { useGcodeGenerator } from '@/composables/useGcodeGenerator'
 import { usePrinterControl } from '@/composables/usePrinterControl'
 import JogWheel from '@/components/jog/JogWheel.vue'
 import JogBar from '@/components/jog/JogBar.vue'
+import OptimizerProgress from '@/components/optimizer/OptimizerProgress.vue'
 const { parseDrillFile, parseProjectFile, saveProject } = useFileHandlers()
 const { generateGcode, saveGcodeFile, getSolderPoints, checkForRiskyLeftMoves } =
   useGcodeGenerator()
@@ -1139,6 +1153,10 @@ const updateCanvas = () => {
 
     drawNoGoZones(ctx)
 
+    if (drillStore.optimizerState.running && drillStore.optimizerState.clusterConvexHulls.length > 0) {
+      drawClusters(ctx)
+    }
+
     for (let pcbIdx = 0; pcbIdx < drillStore.pcbs.length; pcbIdx++) {
       const pcb = drillStore.pcbs[pcbIdx]
       const isActive = pcb.id === drillStore.activePcbId
@@ -1514,6 +1532,53 @@ const drawSelectionBox = () => {
   ctx.strokeStyle = 'cyan'
   ctx.lineWidth = 1 / scale
   ctx.strokeRect(x, y, w, h)
+
+  ctx.restore()
+}
+
+const drawClusters = (ctx) => {
+  const state = drillStore.optimizerState
+  if (!state.running || state.clusterConvexHulls.length === 0) return
+
+  ctx.save()
+
+  for (let i = 0; i < state.clusterConvexHulls.length; i++) {
+    const hull = state.clusterConvexHulls[i]
+    if (!hull || hull.length < 3) continue
+
+    const color = state.clusterColors[i] || '#999'
+    const isActive = state.activeCluster === i
+
+    ctx.beginPath()
+    ctx.moveTo(hull[0].x, -hull[0].y)
+    for (let j = 1; j < hull.length; j++) {
+      ctx.lineTo(hull[j].x, -hull[j].y)
+    }
+    ctx.closePath()
+
+    ctx.fillStyle = color + '18'
+    ctx.fill()
+    ctx.strokeStyle = color + (isActive ? 'cc' : '55')
+    ctx.lineWidth = (isActive ? 2 : 1) / scale
+    ctx.stroke()
+  }
+
+  for (let i = 0; i < state.clusterConvexHulls.length; i++) {
+    const hull = state.clusterConvexHulls[i]
+    if (!hull || hull.length === 0) continue
+
+    const color = state.clusterColors[i] || '#999'
+    const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length
+    const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length
+
+    ctx.beginPath()
+    ctx.arc(cx, -cy, 4 / scale, 0, 2 * Math.PI)
+    ctx.fillStyle = color
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 1.5 / scale
+    ctx.stroke()
+  }
 
   ctx.restore()
 }

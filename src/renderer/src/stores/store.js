@@ -30,6 +30,7 @@ M17 S0
 M500
 G28 X Y ; Home X and Y
 G28 Z ; Home Z
+M106; Turn fan on
 G0 Z{START_SAFE_Z} F800 ; Initial lift height
 
 M221 S{MULTIPLIER} ; Extruder multiplier
@@ -44,6 +45,7 @@ const perPointTemplate = `
 ; Solder Point G-code
 M117 Soldering {INDEX + 1}/{TOTAL_POINTS}
 M73 P{INDEX / TOTAL_POINTS * 100} ; Set progress bar %
+M106; Ensure fan is on
 G0 X{X + X_OFFSET + SOLDER_OFFSET} Y{Y + Y_OFFSET} F6000 ; Move slightly to the right of the point
 G1 Z{Z_OFFSET + SOLDER_PRIME_Z} F800; ; Get near the point
 G1 E{PRIME + RETRACT + 0.5} F600 ; Prime soldering iron with a small amount of solder
@@ -65,6 +67,7 @@ M117 Soldering Done!
 M73 P100 ; Set progress bar to 100%
 G0 Z{END_SAFE_Z} F800 ; Lift soldering iron
 G0 X5 Y200 F6000
+M107 ; Turn fan off
 
 M300 S440 P{BEEP} ; Beep
 G4 P500 ; Wait for 0.5 seconds
@@ -81,6 +84,52 @@ G0 Z{START_SAFE_Z} F800 ; Safe-Z lift between PCBs
 const periodicGcodeTemplate = `
 ; Periodic G-code
 ; Runs every {PERIODIC_HOLE_COUNT} holes
+G0 Z{START_SAFE_Z} F800 ; Safe-Z lift
+G0 X45 Y165 F6000; Position over pad
+G0 Z15 F800; Go down into pad
+G0 X5 ; Wipe left
+G0 X45 ; Wipe right
+G0 Z{START_SAFE_Z} F800 ; Safe-Z lift
+
+`
+
+const feedCalibrateBeforeTemplate = `
+; Feed Calibration — Before
+; Sent before the user manually extrudes solder
+; Variables: SAFE_Z, X, Y, Z_OFFSET, SOLDER_PRIME_Z, PRIME, PRIME_RETRACT, SOLDER_OFFSET, SOAK
+M117 Calibrating feed...
+G0 Z{SAFE_Z} F800
+G0 X{X} Y{Y} F6000
+M106 ; Turn fan on
+G1 Z{Z_OFFSET + SOLDER_PRIME_Z} F800
+G1 E{PRIME + PRIME_RETRACT + 0.5} F600
+G1 E-{PRIME_RETRACT} F800
+G1 Z{Z_OFFSET} F800
+G1 X{X - SOLDER_OFFSET} F800
+G4 P{SOAK * 1000}
+`
+
+const feedCalibrateAfterTemplate = `
+; Feed Calibration — After
+; Sent after the user confirms the calibrated feed amount
+G1 E-{RETRACT} F800 ; Retract solder
+G0 Z{SAFE_Z} F800 ; Lift to safe Z
+M107 ; Turn fan off
+M117 Feed calibrated
+`
+
+const offsetCalibrateBeforeTemplate = `
+; Offset Calibration — Before
+; Sent before jogging to the pad position
+M117 Calibrating offset...
+G0 Z{SAFE_Z} F800 ; Lift to safe Z
+`
+
+const offsetCalibrateAfterTemplate = `
+; Offset Calibration — After
+; Sent after the user saves the calibrated offset
+G0 Z{SAFE_Z} F800 ; Lift to safe Z
+M117 Offset calibrated
 `
 
 const defaultLagrangeCurves = {
@@ -114,6 +163,9 @@ const defaultProfileSettings = {
   solderOffset: 0.25,
   leftMoveWarningDistance: 10,
   leftMoveYTolerance: 5,
+  targetPointsPerCluster: 8,
+  maxPointsPerCluster: 15,
+  softBoundaryDistance: 5,
   pointOffsetX: 0.0,
   pointOffsetY: 0.0,
   pointOffsetZ: 0.0,
@@ -125,8 +177,12 @@ const defaultProfileSettings = {
   betweenBoardGcode: betweenBoardGcodeTemplate,
   periodicGcode: periodicGcodeTemplate,
   periodicHoleCount: 0,
-  periodicAtStart: false,
+  periodicAtStart: true,
   periodicAtEnd: false,
+  feedCalibrateBeforeGcode: feedCalibrateBeforeTemplate,
+  feedCalibrateAfterGcode: feedCalibrateAfterTemplate,
+  offsetCalibrateBeforeGcode: offsetCalibrateBeforeTemplate,
+  offsetCalibrateAfterGcode: offsetCalibrateAfterTemplate,
   lagrangeCurves: JSON.parse(JSON.stringify(defaultLagrangeCurves)),
   baudRate: 115200,
   lineEnding: '\n'
@@ -179,6 +235,7 @@ export const useDrillStore = defineStore(
     const printerPortName = ref('')
     const printerFirmware = ref('')
     const printerHomed = ref(false)
+    const printerIsHoming = ref(false)
     const printerPosition = ref({ x: 0, y: 0, z: 0 })
     const printerPrinting = ref(false)
     const printerPaused = ref(false)
@@ -688,6 +745,7 @@ export const useDrillStore = defineStore(
       printerPortName.value = ''
       printerFirmware.value = ''
       printerHomed.value = false
+      printerIsHoming.value = false
       printerPosition.value = { x: 0, y: 0, z: 0 }
       printerPrinting.value = false
       printerPaused.value = false
@@ -904,197 +962,24 @@ export const useDrillStore = defineStore(
       return d
     }
 
-    async function _nearestNeighborWithZoneAvoidance(points, pcb, startId = null, onUpdate = null) {
-      if (points.length === 0) return []
-      if (points.length === 1) return [points[0].id]
-      pcb = pcb || activePcb.value
-      const zones = _getAllNoGoZones(pcb)
-      const hasZones = zones.length > 0
-      const bedCoords = new Map()
-      for (const d of points) bedCoords.set(d.id, drillToBedSpace(d, pcb))
+    const optimizerState = ref({
+      running: false,
+      stopping: false,
+      bestPath: [],
+      bestCost: 0,
+      layer: 0,
+      totalLayers: 0,
+      currentDepth: 0,
+      isComplete: false,
+      clustersDone: 0,
+      totalClusters: 1,
+      activeCluster: null,
+      clusterColors: [],
+      clusterConvexHulls: []
+    })
 
-      const profile = profiles.value[currentProfile.value]
-      const leftWarnDist = profile?.leftMoveWarningDistance ?? 0
-      const leftYTolerance = profile?.leftMoveYTolerance ?? 5
-      const leftPenalty = leftWarnDist > 0 ? 10 : 1
-
-      const leftPenaltyMap = new Map()
-      if (leftPenalty > 1) {
-        for (const a of points) {
-          const bedA = bedCoords.get(a.id)
-          for (const b of points) {
-            if (a.id === b.id) continue
-            const bedB = bedCoords.get(b.id)
-            if (bedB.x < bedA.x) {
-              let penalized = false
-              for (const c of points) {
-                if (c.id === a.id || c.id === b.id) continue
-                const bedC = bedCoords.get(c.id)
-                if (bedC.x > bedB.x && bedC.x < bedA.x) {
-                  if (Math.hypot(bedC.x - bedB.x, bedC.y - bedB.y) < leftWarnDist
-                    && Math.abs(bedC.y - bedB.y) < leftYTolerance) {
-                    penalized = true
-                    break
-                  }
-                }
-              }
-              if (penalized) leftPenaltyMap.set(`${a.id}->${b.id}`, leftPenalty)
-            }
-          }
-        }
-      }
-
-      let bestStart = points[0]
-      let bestStartDist = Math.hypot(bedCoords.get(bestStart.id).x, bedCoords.get(bestStart.id).y)
-      if (startId !== null) {
-        const found = points.find((d) => d.id === startId)
-        if (found) bestStart = found
-      } else {
-        for (const p of points) {
-          const bed = bedCoords.get(p.id)
-          const dist = Math.hypot(bed.x, bed.y)
-          if (dist < bestStartDist) {
-            bestStart = p
-            bestStartDist = dist
-          }
-        }
-      }
-
-      const distBetween = (a, b) => {
-        let d
-        if (hasZones) {
-          const ab = bedCoords.get(a.id)
-          const bb = bedCoords.get(b.id)
-          d = routedDistance(ab.x, ab.y, bb.x, bb.y, zones)
-        } else {
-          d = Math.hypot(a.x - b.x, a.y - b.y)
-        }
-        return Math.pow(d, 2)
-      }
-
-      const n = points.length
-      const order = new Array(n)
-      const remaining = points.filter((d) => d.id !== bestStart.id)
-      for (let i = 0; i < remaining.length; i++) order[i + 1] = remaining[i]
-      order[0] = bestStart
-
-      const pointAt = (i) => order[(i + n) % n]
-      const dist = (i, j) => distBetween(pointAt(i), pointAt(j))
-      const swap = (i, j) => { const tmp = order[i]; order[i] = order[j]; order[j] = tmp }
-      const delta = (i, j) => {
-        const jm1 = (j - 1 + n) % n, jp1 = (j + 1) % n
-        const im1 = (i - 1 + n) % n, ip1 = (i + 1) % n
-        let s = dist(jm1, i) + dist(i, jp1) + dist(im1, j) + dist(j, ip1)
-          - dist(im1, i) - dist(i, ip1) - dist(jm1, j) - dist(j, jp1)
-        if (jm1 === i || jp1 === i) s += 2 * dist(i, j)
-        return s
-      }
-
-      let tempCoeff = 0.9999
-      let temperature = 100 * dist(0, 1)
-      const totalIters = Math.ceil(Math.log(1e-6 / temperature) / Math.log(tempCoeff))
-
-      const progressBar = document.createElement('div')
-      progressBar.id = 'optimize-progress'
-      progressBar.style.cssText = 'position:fixed;top:0;left:0;width:100%;z-index:10000;background:#333;color:#fff;padding:12px 20px;font-family:sans-serif;font-size:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.3);'
-      progressBar.innerHTML = `<div style="flex:1;"><strong>Optimizing path…</strong> <span id="opt-status">${n} points — iteration 0 / ~${totalIters}</span></div><div style="width:200px;height:8px;background:#555;border-radius:4px;overflow:hidden;"><div id="opt-bar" style="height:100%;width:0%;background:#4fc3f7;transition:width 0.15s;"></div></div>`
-      document.body.appendChild(progressBar)
-
-      const anyPenalizedEdge = () => {
-        if (leftPenalty <= 1) return false
-        for (let k = 0; k < n; k++) {
-          const a = order[k]
-          const b = order[(k + 1) % n]
-          if (!leftPenaltyMap.has(`${a.id}->${b.id}`)) continue
-          const bedA = bedCoords.get(a.id)
-          const bedB = bedCoords.get(b.id)
-          if (Math.hypot(bedA.x - bedB.x, bedA.y - bedB.y) < leftWarnDist
-            && Math.abs(bedA.y - bedB.y) < leftYTolerance) return true
-        }
-        return false
-      }
-
-      let iteration = 0
-      const YIELD_EVERY = 200
-      while (temperature > 1e-6) {
-        const i = 1 + Math.floor(Math.random() * (n - 1))
-        const j = 1 + Math.floor(Math.random() * (n - 1))
-        if (i !== j) {
-          const d = delta(i, j)
-          if (d < 0 || Math.random() < Math.exp(-d / temperature)) {
-            swap(i, j)
-            if (anyPenalizedEdge()) swap(i, j)
-          }
-        }
-        temperature *= tempCoeff
-        iteration++
-
-        if (iteration % YIELD_EVERY === 0) {
-          const currentOrder = order.map((d) => d.id)
-          pcb.path = currentOrder
-          pcb.drillData.forEach((d) => (d.pathIndex = null))
-          currentOrder.forEach((id, idx) => {
-            const d = pcb.drillData.find((dr) => dr.id === id)
-            if (d) d.pathIndex = idx
-          })
-          if (onUpdate) onUpdate(currentOrder)
-          const pct = Math.min(99, Math.round((iteration / totalIters) * 100))
-          const bar = document.getElementById('opt-bar')
-          const status = document.getElementById('opt-status')
-          if (bar) bar.style.width = pct + '%'
-          if (status) status.textContent = `${n} points — iteration ${iteration} / ~${totalIters} (${pct}%)`
-          await new Promise((r) => setTimeout(r, 0))
-        }
-      }
-
-      const bar = document.getElementById('opt-bar')
-      if (bar) bar.style.width = '100%'
-      const status = document.getElementById('opt-status')
-      if (status) status.textContent = `Done — ${iteration} iterations. Fixing violations…`
-      await new Promise((r) => setTimeout(r, 0))
-
-      if (leftPenalty > 1) {
-        for (let pass = 0; pass < 10; pass++) {
-          let fixed = false
-          for (let k = 0; k < n; k++) {
-            const a = order[k]
-            const b = order[(k + 1) % n]
-            if (!leftPenaltyMap.has(`${a.id}->${b.id}`)) continue
-            const bedA = bedCoords.get(a.id)
-            const bedB = bedCoords.get(b.id)
-            if (Math.hypot(bedA.x - bedB.x, bedA.y - bedB.y) >= leftWarnDist) continue
-            if (Math.abs(bedA.y - bedB.y) >= leftYTolerance) continue
-            let bestJ = -1, bestSave = 0
-            for (let j = 0; j < n; j++) {
-              if (j === k || j === (k + 1) % n) continue
-              const c = order[j]
-              const cBefore = order[(j - 1 + n) % n]
-              const cAfter = order[(j + 1) % n]
-              const save = distBetween(a, cBefore) + distBetween(c, b)
-                - distBetween(a, b) - distBetween(c, cBefore)
-              const createsNew = leftPenaltyMap.has(`${c.id}->${b.id}`)
-                && Math.hypot(bedCoords.get(c.id).x - bedB.x, bedCoords.get(c.id).y - bedB.y) < leftWarnDist
-              if (save > bestSave && !createsNew) {
-                bestSave = save
-                bestJ = j
-              }
-            }
-            if (bestJ >= 0) {
-              const tmp = order[k + 1]
-              order[k + 1] = order[bestJ]
-              order[bestJ] = tmp
-              fixed = true
-              break
-            }
-          }
-          if (!fixed) break
-        }
-      }
-
-      setTimeout(() => progressBar.remove(), 800)
-
-      return order.map((d) => d.id)
-    }
+    let removeUpdateListener = null
+    let removeDoneListener = null
 
     async function optimizePath(redraw = null) {
       const pcb = activePcb.value
@@ -1146,17 +1031,114 @@ export const useDrillStore = defineStore(
       addUndoSnapshot(_takeSnapshot())
       redoStack.value = []
 
-      const newOrder = await _nearestNeighborWithZoneAvoidance(pointsToOptimize, pcb, startId, redraw)
-
-      if (hasSelection) {
-        const idsToReplace = new Set(selectedPoints.map((d) => d.id))
-        pcb.path = pcb.path.filter((id) => !idsToReplace.has(id))
-        pcb.path.push(...newOrder)
-      } else {
-        pcb.path = newOrder
+      optimizerState.value = {
+        running: true,
+        stopping: false,
+        bestPath: [],
+        bestCost: 0,
+        layer: 0,
+        totalLayers: pointsToOptimize.length,
+        currentDepth: 0,
+        isComplete: false,
+        clustersDone: 0,
+        totalClusters: 1,
+        activeCluster: null,
+        clusterColors: [],
+        clusterConvexHulls: []
       }
 
-      updatePcbPathIndices(pcb.id)
+      if (removeUpdateListener) removeUpdateListener()
+      if (removeDoneListener) removeDoneListener()
+
+      removeUpdateListener = window.api.optimizer.onUpdate((data) => {
+        if (data.bestPath != null) optimizerState.value.bestPath = data.bestPath
+        if (data.bestCost != null) optimizerState.value.bestCost = data.bestCost
+        if (data.layer != null) optimizerState.value.layer = data.layer
+        if (data.totalLayers != null) optimizerState.value.totalLayers = data.totalLayers
+        if (data.currentDepth != null) optimizerState.value.currentDepth = data.currentDepth
+        if (data.isComplete != null) optimizerState.value.isComplete = data.isComplete
+        if (data.clustersDone != null) optimizerState.value.clustersDone = data.clustersDone
+        if (data.totalClusters != null) optimizerState.value.totalClusters = data.totalClusters
+        if (data.activeCluster != null) optimizerState.value.activeCluster = data.activeCluster
+        if (data.clusterColors != null) optimizerState.value.clusterColors = data.clusterColors
+        if (data.clusterConvexHulls != null) optimizerState.value.clusterConvexHulls = data.clusterConvexHulls
+
+        if (data.bestPath && data.bestPath.length > 0) {
+          pcb.path = [...data.bestPath]
+          pcb.drillData.forEach((d) => (d.pathIndex = null))
+          data.bestPath.forEach((id, idx) => {
+            const d = pcb.drillData.find((dr) => dr.id === id)
+            if (d) d.pathIndex = idx
+          })
+          if (redraw) redraw()
+        }
+      })
+
+      removeDoneListener = window.api.optimizer.onDone((data) => {
+        optimizerState.value.running = false
+        optimizerState.value.stopping = false
+
+        if (data.bestPath.length > 0) {
+          if (hasSelection) {
+            const idsToReplace = new Set(selectedPoints.map((d) => d.id))
+            pcb.path = pcb.path.filter((id) => !idsToReplace.has(id))
+            pcb.path.push(...data.bestPath)
+          } else {
+            pcb.path = [...data.bestPath]
+          }
+        }
+
+        updatePcbPathIndices(pcb.id)
+        if (redraw) redraw()
+
+        setTimeout(() => {
+          if (removeUpdateListener) removeUpdateListener()
+          if (removeDoneListener) removeDoneListener()
+          removeUpdateListener = null
+          removeDoneListener = null
+        }, 100)
+      })
+
+      const profile = profiles.value[currentProfile.value]
+
+      await window.api.optimizer.start({
+        points: pointsToOptimize.map((d) => ({
+          id: d.id,
+          x: d.x,
+          y: d.y,
+          solder: d.solder,
+          tool: d.tool,
+          size: d.size
+        })),
+        pcb: {
+          originOffsetX: pcb.originOffsetX,
+          originOffsetY: pcb.originOffsetY,
+          rotation: pcb.rotation,
+          noGoZones: JSON.parse(JSON.stringify(pcb.noGoZones || [])),
+          thickness: pcb.thickness
+        },
+        startId,
+        globalNoGoZones: JSON.parse(JSON.stringify(globalNoGoZones.value)),
+        leftMoveWarningDistance: profile?.leftMoveWarningDistance ?? 10,
+        leftMoveYTolerance: profile?.leftMoveYTolerance ?? 5,
+        targetPointsPerCluster: profile?.targetPointsPerCluster ?? 8,
+        maxPointsPerCluster: profile?.maxPointsPerCluster ?? 15,
+        softBoundaryDistance: profile?.softBoundaryDistance ?? 5
+      })
+    }
+
+    function pauseOptimizer() {
+      window.api.optimizer.pause()
+      optimizerState.value.stopping = true
+    }
+
+    function resumeOptimizer() {
+      window.api.optimizer.resume()
+      optimizerState.value.stopping = false
+    }
+
+    function cancelOptimizer() {
+      window.api.optimizer.cancel()
     }
 
     return {
@@ -1185,6 +1167,7 @@ export const useDrillStore = defineStore(
       printerPortName,
       printerFirmware,
       printerHomed,
+      printerIsHoming,
       printerPosition,
       printerPrinting,
       printerPaused,
@@ -1277,8 +1260,11 @@ export const useDrillStore = defineStore(
       getNoGoCorners,
       computeRouteAroundZones,
       routedDistance,
-      _nearestNeighborWithZoneAvoidance,
       optimizePath,
+      optimizerState,
+      pauseOptimizer,
+      resumeOptimizer,
+      cancelOptimizer,
 
       // Template constants
       defaultProfileSettings

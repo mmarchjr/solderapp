@@ -167,6 +167,26 @@ const periodicAtEnd = computed({
   set: (val) => drillStore.updateCurrentProfileSettings({ periodicAtEnd: val })
 })
 
+const feedCalibrateBeforeGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].feedCalibrateBeforeGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ feedCalibrateBeforeGcode: val })
+})
+
+const feedCalibrateAfterGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].feedCalibrateAfterGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ feedCalibrateAfterGcode: val })
+})
+
+const offsetCalibrateBeforeGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].offsetCalibrateBeforeGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ offsetCalibrateBeforeGcode: val })
+})
+
+const offsetCalibrateAfterGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].offsetCalibrateAfterGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ offsetCalibrateAfterGcode: val })
+})
+
 // Add new computed property for point offset X
 const solderOffset = computed({
   get: () => drillStore.profiles[drillStore.currentProfile].solderOffset ?? 0,
@@ -182,6 +202,23 @@ const leftMoveYTolerance = computed({
   get: () => drillStore.profiles[drillStore.currentProfile].leftMoveYTolerance ?? 5,
   set: (val) => drillStore.updateCurrentProfileSettings({ leftMoveYTolerance: val })
 })
+
+const targetPointsPerCluster = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].targetPointsPerCluster ?? 8,
+  set: (val) => drillStore.updateCurrentProfileSettings({ targetPointsPerCluster: val })
+})
+
+const softBoundaryDistance = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].softBoundaryDistance ?? 5,
+  set: (val) => drillStore.updateCurrentProfileSettings({ softBoundaryDistance: val })
+})
+
+const maxPointsPerCluster = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].maxPointsPerCluster ?? 15,
+  set: (val) => drillStore.updateCurrentProfileSettings({ maxPointsPerCluster: val })
+})
+
+const showClusteringSettings = ref(false)
 
 function resetToDefaults() {
   drillStore.resetCurrentProfileToDefault()
@@ -580,6 +617,61 @@ onBeforeUnmount(() => {
                   Only flag leftward moves between pads whose Y centers are within this distance.
                   Pads at very different heights are less likely to bridge.
                 </div>
+
+                <button
+                  class="btn btn-outline-secondary btn-sm mt-3"
+                  @click="showClusteringSettings = !showClusteringSettings"
+                >
+                  <i class="fa-solid fa-layer-group me-1"></i>
+                  Clustering Settings
+                  <i class="fa-solid fa-chevron-down ms-1" :class="{ 'fa-rotate-180': showClusteringSettings }"></i>
+                </button>
+
+                <div v-if="showClusteringSettings" class="clustering-settings mt-2 p-3 border rounded">
+                  <label class="form-label" title="Target number of points per cluster when auto-clustering is enabled (>15 points)">
+                    Target Points Per Cluster
+                  </label>
+                  <input
+                    v-model.number="targetPointsPerCluster"
+                    type="number"
+                    class="form-control"
+                    step="1"
+                    min="3"
+                    max="50"
+                  />
+                  <div class="form-text">
+                    Boards with more than 15 solder points are auto-clustered. This controls the target group size.
+                  </div>
+
+                  <label class="form-label mt-3" title="Hard limit on points per cluster. Oversized clusters are split further.">
+                    Max Points Per Cluster
+                  </label>
+                  <input
+                    v-model.number="maxPointsPerCluster"
+                    type="number"
+                    class="form-control"
+                    step="1"
+                    min="3"
+                    max="50"
+                  />
+                  <div class="form-text">
+                    Clusters exceeding this size are automatically split into smaller sub-clusters.
+                  </div>
+
+                  <label class="form-label mt-3" title="Distance threshold for sharing points between adjacent clusters">
+                    Soft Boundary Distance (mm)
+                  </label>
+                  <input
+                    v-model.number="softBoundaryDistance"
+                    type="number"
+                    class="form-control"
+                    step="0.5"
+                    min="0"
+                  />
+                  <div class="form-text">
+                    Points within this distance of an adjacent cluster are included in both clusters' optimization.
+                  </div>
+                </div>
               </div>
 
               <div class="col-md-6">
@@ -659,6 +751,52 @@ onBeforeUnmount(() => {
                   title="End G-code"
                   icon="fa-stop"
                   @update:code="endGcode = $event"
+                />
+              </div>
+            </div>
+
+            <!-- Calibration G-code -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <h5><i class="fa-solid fa-bullseye"></i> Calibration G-code</h5>
+                <p class="text-muted small">
+                  G-code executed before/after feed and offset calibration in the Calibrate tab.
+                  Feed Before variables: <code>{SAFE_Z}</code>, <code>{X}</code>, <code>{Y}</code>, <code>{Z_OFFSET}</code>, <code>{SOLDER_PRIME_Z}</code>, <code>{PRIME}</code>, <code>{PRIME_RETRACT}</code>, <code>{SOLDER_OFFSET}</code>, <code>{SOAK}</code>.
+                  After/Offset variables: <code>{SAFE_Z}</code>, <code>{RETRACT}</code>.
+                </p>
+              </div>
+
+              <div class="col-md-6">
+                <GcodeEditor
+                  :code="feedCalibrateBeforeGcode"
+                  title="Feed Calibrate — Before"
+                  icon="fa-arrow-right"
+                  @update:code="feedCalibrateBeforeGcode = $event"
+                />
+              </div>
+              <div class="col-md-6">
+                <GcodeEditor
+                  :code="feedCalibrateAfterGcode"
+                  title="Feed Calibrate — After"
+                  icon="fa-arrow-left"
+                  @update:code="feedCalibrateAfterGcode = $event"
+                />
+              </div>
+
+              <div class="col-md-6 mt-3">
+                <GcodeEditor
+                  :code="offsetCalibrateBeforeGcode"
+                  title="Offset Calibrate — Before"
+                  icon="fa-arrow-right"
+                  @update:code="offsetCalibrateBeforeGcode = $event"
+                />
+              </div>
+              <div class="col-md-6 mt-3">
+                <GcodeEditor
+                  :code="offsetCalibrateAfterGcode"
+                  title="Offset Calibrate — After"
+                  icon="fa-arrow-left"
+                  @update:code="offsetCalibrateAfterGcode = $event"
                 />
               </div>
             </div>
