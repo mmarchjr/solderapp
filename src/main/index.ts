@@ -119,7 +119,7 @@ app.whenReady().then(() => {
   )
   mainWindow.webContents.session.setPermissionCheckHandler(
     (_webContents, permission, _requestingOrigin, details) => {
-      if (permission === 'serial' && (details.securityOrigin === 'file:///' || details.securityOrigin.startsWith('http://localhost'))) {
+      if (permission === 'serial' && (details.securityOrigin === 'file:///' || details.securityOrigin?.startsWith('http://localhost'))) {
         return true
       }
       return false

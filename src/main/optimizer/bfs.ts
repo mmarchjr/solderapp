@@ -98,7 +98,6 @@ export async function bfsOptimize(
 
   let branchCount = 0
   const YIELD_EVERY = 100
-  let lastUpdateTime = Date.now()
 
   type Branch = {
     path: number[]

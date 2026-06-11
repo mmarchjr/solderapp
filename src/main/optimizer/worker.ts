@@ -1,5 +1,5 @@
 import { parentPort } from 'worker_threads'
-import { Point, BedPoint, PcbConfig, NoGoZone, drillToBedSpace } from './distance'
+import { Point, BedPoint, PcbConfig, NoGoZone } from './distance'
 import { bfsOptimize, BfsCallbacks, LeftMoveConfig } from './bfs'
 import { clusterPoints, ClusterConfig, getClusterColor } from './cluster'
 
@@ -16,7 +16,7 @@ const port = parentPort
 if (!port) throw new Error('Worker must be run as a worker thread')
 
 port.on('message', async (payload: WorkerPayload) => {
-  const { points, pcb, startId, allZones, leftMoveConfig, clusterConfig } = payload
+  const { points, pcb, allZones, leftMoveConfig, clusterConfig } = payload
 
   if (points.length === 0) {
     port!.postMessage({ type: 'done', bestPath: [], bestCost: 0, layersExplored: 0, cancelled: false })
@@ -79,13 +79,33 @@ port.on('message', async (payload: WorkerPayload) => {
     }))
 
     const centroidPcb: PcbConfig = { ...pcb, noGoZones: [] }
+    const centroidCallbacks: BfsCallbacks = {
+      onUpdate: (data) => {
+        sendUpdate({
+          bestPath: data.bestPath,
+          bestCost: data.bestCost,
+          layer: data.layer,
+          totalLayers: data.totalLayers,
+          currentDepth: data.currentDepth,
+          isComplete: data.isComplete,
+          clustersDone: 0,
+          totalClusters: topClusters.length,
+          activeCluster: 0,
+          clusterColors,
+          clusterConvexHulls,
+          hierarchyDepth: 0
+        })
+      },
+      isPaused: () => paused,
+      isCancelled: () => cancelled
+    }
     const centroidResult = await bfsOptimize(
       centroidPoints,
       centroidPcb,
       startClusterIdx,
       [],
       { warningDistance: 0, yTolerance: 0 },
-      callbacks
+      centroidCallbacks
     )
     totalLayersExplored += centroidResult.layersExplored
 
@@ -125,15 +145,8 @@ port.on('message', async (payload: WorkerPayload) => {
     if (pts.length <= clusterConfig.targetPointsPerCluster) {
       const clusterStartId = findClusterStart(pts, pcb)
 
-      let leafBestPath: number[] = []
-      let leafBestCost = 0
-
       const leafCallbacks: BfsCallbacks = {
         onUpdate: (data) => {
-          if (data.bestPath && data.bestPath.length > 0) {
-            leafBestPath = data.bestPath
-            leafBestCost = data.bestCost
-          }
           sendUpdate({
             bestPath: data.bestPath,
             bestCost: data.bestCost,

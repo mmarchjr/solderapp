@@ -107,7 +107,7 @@ function convexHull(points: BedPoint[]): BedPoint[] {
 function expandedConvexHull(
   clusterPoints: Point[],
   clusterBeds: BedPoint[],
-  pcb: PcbConfig,
+  _pcb: PcbConfig,
   padding: number
 ): BedPoint[] {
   if (clusterBeds.length <= 1) {
