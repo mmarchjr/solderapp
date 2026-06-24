@@ -28,7 +28,7 @@
     "@tweenjs/tween.js": "^25.0.0",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
-    "electron-updater": "^6.3.9",
+    "electron-updater": "^6.8.9",
     "highlight.js": "^11.11.1",
     "jszip": "^3.10.1",
     "occt-import-js": "^0.0.23",
