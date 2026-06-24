@@ -14,6 +14,15 @@
           >
             <i class="fa-solid fa-route me-1"></i> Path
           </button>
+          <!--
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'calibrate' }"
+            @click="$emit('switch-tab', 'calibrate')"
+          >
+            <i class="fa-solid fa-bullseye me-1"></i> Calibrate
+          </button>
+          -->
           <button
             class="tab-btn"
             :class="{ active: activeTab === 'print' }"
@@ -52,20 +61,85 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div id="navbarNav" class="collapse navbar-collapse justify-content-end">
+        <div id="navbarNav" class="collapse navbar-collapse">
           <ul class="navbar-nav"></ul>
+        </div>
+
+        <div class="printer-status-group">
+          <div class="d-flex align-items-center gap-2">
+            <span class="led-indicator" :class="{ green: printer.connected }"></span>
+            <span
+              class="badge"
+              :class="{
+                'bg-success': !printer.printing && printer.connected,
+                'bg-warning': printer.printing && !printer.paused,
+                'bg-secondary': !printer.connected,
+                'bg-info': printer.paused
+              }"
+            >
+              {{
+                !printer.connected
+                  ? 'Disconnected'
+                  : printer.printing
+                    ? printer.paused
+                      ? 'Paused'
+                      : 'Printing'
+                    : 'Idle'
+              }}
+            </span>
+            <span v-if="printer.connected" class="badge bg-success-subtle text-success">
+              {{ printer.homed ? 'Homed' : 'Not Homed' }}
+            </span>
+            <span
+              v-if="printer.connected && printer.printing"
+              class="badge bg-dark-subtle text-dark"
+            >
+              {{ printer.currentPoint }}/{{ printer.totalPoints }} |
+              {{ formatTime(printer.elapsed) }}
+            </span>
+          </div>
+          <button
+            class="btn btn-sm btn-outline-primary"
+            :disabled="
+              !printer.connected ||
+              printer.printing ||
+              printer.isHoming ||
+              printer.isHomeCoolingDown
+            "
+            @click="printerCtrl.home()"
+          >
+            <i class="fa-solid fa-house me-1"></i> Home
+          </button>
+          <button
+            class="btn btn-sm"
+            :class="printer.connected ? 'btn-outline-danger' : 'btn-success'"
+            @click="handleConnect"
+          >
+            <i class="fa-solid me-1" :class="printer.connected ? 'fa-unplug' : 'fa-plug'"></i>
+            {{ printer.connected ? 'Disconnect' : 'Connect' }}
+          </button>
         </div>
       </div>
     </header>
 
     <ImportWizard ref="importWizardRef" />
+    <Teleport to="body">
+      <SerialPortPicker
+        v-if="showPortPicker"
+        ref="portPickerRef"
+        @select="handlePortSelected"
+        @cancel="handlePortPickerCancel"
+      />
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, defineAsyncComponent } from 'vue'
 import { useDrillStore } from '@/stores/store'
+import { usePrinterControl } from '@/composables/usePrinterControl'
 import UploadDrillFile from '@/components/import/UploadDrillFile.vue'
+import SerialPortPicker from '@/components/machine/SerialPortPicker.vue'
 const ImportWizard = defineAsyncComponent(() => import('@/components/import/ImportWizard.vue'))
 import { useFileHandlers } from '@/composables/useFileHandlers'
 const { saveProject } = useFileHandlers()
@@ -77,12 +151,45 @@ defineProps({
 defineEmits(['switch-tab'])
 
 const drillStore = useDrillStore()
+const printerCtrl = usePrinterControl()
+const printer = printerCtrl.printer
 const importWizardRef = ref(null)
+const showPortPicker = ref(false)
+const portPickerRef = ref(null)
+
+function handleConnect() {
+  if (printer.connected) {
+    printerCtrl.disconnect()
+  } else {
+    showPortPicker.value = true
+    setTimeout(() => portPickerRef.value?.loadPorts(), 50)
+  }
+}
+
+async function handlePortSelected(port) {
+  showPortPicker.value = false
+  try {
+    window.api.serial.selectPort(port.portId)
+    await printerCtrl.connect()
+  } catch (err) {
+    console.error('Connection failed:', err)
+  }
+}
+
+function handlePortPickerCancel() {
+  showPortPicker.value = false
+}
 
 const handleZipFile = (file) => {
   if (importWizardRef.value) {
     importWizardRef.value.openZipFile(file)
   }
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 </script>
 
@@ -131,5 +238,29 @@ const handleZipFile = (file) => {
 .tab-btn.active {
   color: white;
   background: rgba(255, 255, 255, 0.2);
+}
+
+.printer-status-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding: 0 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.led-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #666;
+  flex-shrink: 0;
+}
+
+.led-indicator.green {
+  background: #4caf50;
+  box-shadow: 0 0 6px #4caf50;
 }
 </style>

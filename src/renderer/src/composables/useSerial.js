@@ -9,6 +9,7 @@ const writer = ref(null)
 const dataCallbacks = ref([])
 let readLoop = null
 let keepAliveInterval = null
+let idleKeepAliveInterval = null
 
 function getLineEnding() {
   const ending = localStorage.getItem('solderLineEnding') || '\n'
@@ -53,6 +54,7 @@ async function connect() {
 async function disconnect() {
   stopReadLoop()
   stopKeepAlive()
+  stopIdleKeepAlive()
 
   if (reader.value) {
     try {
@@ -189,6 +191,22 @@ function stopKeepAlive() {
   }
 }
 
+function startIdleKeepAlive(intervalMs = 15000) {
+  stopIdleKeepAlive()
+  idleKeepAliveInterval = setInterval(() => {
+    if (isConnected.value) {
+      send('M105').catch(() => {})
+    }
+  }, intervalMs)
+}
+
+function stopIdleKeepAlive() {
+  if (idleKeepAliveInterval) {
+    clearInterval(idleKeepAliveInterval)
+    idleKeepAliveInterval = null
+  }
+}
+
 export function useSerial() {
   return {
     isConnected,
@@ -200,6 +218,8 @@ export function useSerial() {
     sendWithResponse,
     onData,
     startKeepAlive,
-    stopKeepAlive
+    stopKeepAlive,
+    startIdleKeepAlive,
+    stopIdleKeepAlive
   }
 }

@@ -109,7 +109,7 @@ defineExpose({ loadPorts })
                   class="port-item"
                   :class="{ active: selectedIndex === index }"
                   @click="selectedIndex = index"
-                  @dblclick="selectedIndex = index; selectPort()"
+                  @dblclick="((selectedIndex = index), selectPort())"
                 >
                   <i class="fa-solid fa-microchip port-icon"></i>
                   <div class="port-details">

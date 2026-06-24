@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { SerialPort } from 'serialport'
+import { setupOptimizerIPC } from './optimizer'
 
 let selectedPortId: string | null = null
 
@@ -62,6 +63,9 @@ app.whenReady().then(() => {
 
   const mainWindow = createWindow()
 
+  // Setup optimizer IPC handlers
+  setupOptimizerIPC(mainWindow)
+
   // IPC: List available serial ports for the custom port picker
   ipcMain.handle('serial:get-ports', async () => {
     try {
@@ -115,7 +119,11 @@ app.whenReady().then(() => {
   )
   mainWindow.webContents.session.setPermissionCheckHandler(
     (_webContents, permission, _requestingOrigin, details) => {
-      if (permission === 'serial' && details.securityOrigin === 'file:///') {
+      if (
+        permission === 'serial' &&
+        (details.securityOrigin === 'file:///' ||
+          details.securityOrigin?.startsWith('http://localhost'))
+      ) {
         return true
       }
       return false
@@ -123,7 +131,10 @@ app.whenReady().then(() => {
   )
 
   mainWindow.webContents.session.setDevicePermissionHandler((details) => {
-    if (details.deviceType === 'serial' && details.origin === 'file://') {
+    if (
+      details.deviceType === 'serial' &&
+      (details.origin === 'file://' || details.origin.startsWith('http://localhost'))
+    ) {
       return true
     }
     return false

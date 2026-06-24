@@ -15,14 +15,14 @@
               v-model.number="drillStore.originOffsetX"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              @input="saveOffsetUndoState(); updateCanvas()"
+              @input="(saveOffsetUndoState(), updateCanvas())"
             />
             <label class="form-label"><i class="fas fa-arrows-alt-v pcb-icon"></i></label>
             <input
               v-model.number="drillStore.originOffsetY"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              @input="saveOffsetUndoState(); updateCanvas()"
+              @input="(saveOffsetUndoState(), updateCanvas())"
             />
 
             <label class="form-label pcb-section">Rotate</label>
@@ -106,6 +106,19 @@
         @wheel.prevent="handleZoom"
         @contextmenu.prevent
       ></canvas>
+      <OptimizerProgress
+        :visible="drillStore.optimizerState.running"
+        :best-cost="drillStore.optimizerState.bestCost"
+        :current-depth="drillStore.optimizerState.currentDepth"
+        :total-layers="drillStore.optimizerState.totalLayers"
+        :clusters-done="drillStore.optimizerState.clustersDone"
+        :total-clusters="drillStore.optimizerState.totalClusters"
+        :active-cluster="drillStore.optimizerState.activeCluster"
+        :cluster-colors="drillStore.optimizerState.clusterColors"
+        @stop="drillStore.pauseOptimizer()"
+        @resume="drillStore.resumeOptimizer()"
+        @cancel="drillStore.cancelOptimizer()"
+      />
       <div class="editor-instructions">
         <transition name="fade" mode="out-in">
           <div
@@ -155,7 +168,7 @@
                   class="pcb-list-item d-flex align-items-center"
                   :class="{ active: pcb.id === drillStore.activePcbId }"
                   draggable="true"
-                  @click="drillStore.setActivePcb(pcb.id); updateCanvas()"
+                  @click="(drillStore.setActivePcb(pcb.id), updateCanvas())"
                   @contextmenu.prevent="showPcbContextMenu($event, idx)"
                   @dragstart="onPcbDragStart(idx, $event)"
                   @dragover.prevent="onPcbDragOver(idx, $event)"
@@ -169,7 +182,7 @@
                   <button
                     class="btn btn-sm btn-link p-0 text-decoration-none"
                     title="Calculate PCB Offset"
-                    @click.stop="drillStore.setActivePcb(pcb.id); toggleOriginCalculator()"
+                    @click.stop="(drillStore.setActivePcb(pcb.id), toggleOriginCalculator())"
                   >
                     <i class="fa-solid fa-crosshairs"></i>
                   </button>
@@ -213,7 +226,7 @@
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
                     step="0.5"
-                    @input="saveOffsetUndoState(); updateCanvas()"
+                    @input="(saveOffsetUndoState(), updateCanvas())"
                   />
                 </div>
                 <div class="d-flex align-items-center mb-1">
@@ -223,7 +236,7 @@
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
                     step="0.5"
-                    @input="saveOffsetUndoState(); updateCanvas()"
+                    @input="(saveOffsetUndoState(), updateCanvas())"
                   />
                 </div>
                 <div class="d-flex align-items-center mb-1">
@@ -323,7 +336,11 @@
 
             <div v-if="!printer.connected || !printer.homed" class="text-center my-3">
               <p class="text-muted mb-2">Printer must be connected and homed</p>
-              <button class="btn btn-primary" :disabled="!printer.connected" @click="handleHome">
+              <button
+                class="btn btn-primary"
+                :disabled="!printer.connected || printer.isHoming || printer.isHomeCoolingDown"
+                @click="handleHome"
+              >
                 <i class="fa-solid fa-house me-1"></i> Home (G28)
               </button>
             </div>
@@ -485,7 +502,8 @@ import {
   watch,
   onBeforeUnmount,
   nextTick,
-  defineAsyncComponent
+  defineAsyncComponent,
+  Ref
 } from 'vue'
 const GcodeSimulator = defineAsyncComponent(() => import('@/components/gcode/GcodeSimulator.vue'))
 const ImportWizard = defineAsyncComponent(() => import('@/components/import/ImportWizard.vue'))
@@ -496,15 +514,16 @@ import { useGcodeGenerator } from '@/composables/useGcodeGenerator'
 import { usePrinterControl } from '@/composables/usePrinterControl'
 import JogWheel from '@/components/jog/JogWheel.vue'
 import JogBar from '@/components/jog/JogBar.vue'
+import OptimizerProgress from '@/components/optimizer/OptimizerProgress.vue'
 const { parseDrillFile, parseProjectFile, saveProject } = useFileHandlers()
 const { generateGcode, saveGcodeFile, getSolderPoints, checkForRiskyLeftMoves } =
   useGcodeGenerator()
 
-const props = defineProps({
-  readOnly: { type: Boolean, default: false }
-})
+// const props = defineProps({
+//   readOnly: { type: Boolean, default: false }
+// })
 
-function checkAndWarnRiskyLeftMove(addedId) {
+function checkAndWarnRiskyLeftMove() {
   const profile = drillStore.profiles[drillStore.currentProfile]
   const threshold = profile.leftMoveWarningDistance
   const yTolerance = profile.leftMoveYTolerance ?? 5
@@ -541,19 +560,19 @@ const selectedProfile = computed({
   set: (val) => drillStore.setCurrentProfile(val)
 })
 
-// Homing inputs
-const homeX = computed({
-  get: () => drillStore.profiles[drillStore.currentProfile].homeX,
-  set: (val) => drillStore.updateCurrentProfileSettings({ homeX: val })
-})
-const homeY = computed({
-  get: () => drillStore.profiles[drillStore.currentProfile].homeY,
-  set: (val) => drillStore.updateCurrentProfileSettings({ homeY: val })
-})
-const homeZ = computed({
-  get: () => drillStore.profiles[drillStore.currentProfile].homeZ,
-  set: (val) => drillStore.updateCurrentProfileSettings({ homeZ: val })
-})
+// // Homing inputs
+// const homeX = computed({
+//   get: () => drillStore.profiles[drillStore.currentProfile].homeX,
+//   set: (val) => drillStore.updateCurrentProfileSettings({ homeX: val })
+// })
+// const homeY = computed({
+//   get: () => drillStore.profiles[drillStore.currentProfile].homeY,
+//   set: (val) => drillStore.updateCurrentProfileSettings({ homeY: val })
+// })
+// const homeZ = computed({
+//   get: () => drillStore.profiles[drillStore.currentProfile].homeZ,
+//   set: (val) => drillStore.updateCurrentProfileSettings({ homeZ: val })
+// })
 
 let pendingRenderFrame = null
 
@@ -576,7 +595,7 @@ const editorLabels = ref([
 const currentLabelIndex = ref(0)
 const lastSelectedIndex = ref(null)
 
-let ctx,
+let ctx = null,
   scale = 1,
   offsetX = 0,
   offsetY = 0
@@ -648,8 +667,7 @@ const saveGcode = () => {
     saveGcodeFile(gcode)
     console.log('G-code saved successfully!')
   } catch (error) {
-    console.error('Error generating G-code:', error)
-    alert(`Error generating G-code: ${error.message}`)
+    alert('Error saving G-code: ' + (error instanceof Error ? error.message : 'Unknown error'))
   }
 }
 
@@ -682,10 +700,23 @@ const openSimulator = () => {
     }
 
     const gcode = generateGcode()
+    if (!simulatorRef.value) {
+      console.error('Simulator reference is not set.')
+      alert('Error: Simulator is not available.')
+      return
+    }
     simulatorRef.value.show(gcode)
   } catch (error) {
     console.error('Error opening simulator:', error)
-    alert(`Error: ${error.message}`)
+    try {
+      if (error instanceof Error) {
+        alert(`Error: ${error.message}`)
+      } else {
+        alert('An unknown error occurred while opening the simulator.')
+      }
+    } catch (alertError) {
+      console.error('Error displaying alert:', alertError)
+    }
   }
 }
 
@@ -746,7 +777,7 @@ const resizeCanvas = () => {
   canvasEl.height = height * dpr
   canvasEl.style.width = width + 'px'
   canvasEl.style.height = height + 'px'
-
+  if (!ctx) return
   ctx.setTransform(1, 0, 0, 1, 0, 0) // reset transform
   ctx.scale(dpr, dpr)
 
@@ -829,7 +860,7 @@ onMounted(async () => {
   if (!drillStore.profiles[selectedProfile.value]) {
     drillStore.initProfiles()
   }
-  const s = drillStore.profiles[selectedProfile.value] || {}
+  // const s = drillStore.profiles[selectedProfile.value] || {}
 
   resizeCanvas() // sets canvas size and devicePixelRatio
   fitCanvasToBuildPlate() // zooms and centers based on build plate
@@ -980,7 +1011,7 @@ const onSolderToggle = (hole) => {
     drillStore.removeFromPath(hole.id)
   } else {
     drillStore.addToPath(hole.id)
-    if (!checkAndWarnRiskyLeftMove(hole.id)) {
+    if (!checkAndWarnRiskyLeftMove()) {
       drillStore.removeFromPath(hole.id)
       hole.solder = false
     }
@@ -1123,7 +1154,9 @@ const updateCanvas = () => {
       'ch=',
       canvas.value?.height
     )
+    if (!ctx) return
     ctx.setTransform(1, 0, 0, 1, 0, 0)
+    if (!canvas.value) return
     ctx.clearRect(0, 0, canvas.value.width, canvas.value.height)
     ctx.scale(dpr, dpr)
     ctx.save()
@@ -1139,11 +1172,18 @@ const updateCanvas = () => {
 
     drawNoGoZones(ctx)
 
+    if (
+      drillStore.optimizerState.running &&
+      drillStore.optimizerState.clusterConvexHulls.length > 0
+    ) {
+      drawClusters(ctx)
+    }
+
     for (let pcbIdx = 0; pcbIdx < drillStore.pcbs.length; pcbIdx++) {
       const pcb = drillStore.pcbs[pcbIdx]
       const isActive = pcb.id === drillStore.activePcbId
       const alpha = isActive ? 1.0 : 0.35
-
+      if (!ctx) return
       ctx.save()
       ctx.globalAlpha = alpha
       ctx.translate(pcb.originOffsetX, -pcb.originOffsetY)
@@ -1514,6 +1554,53 @@ const drawSelectionBox = () => {
   ctx.strokeStyle = 'cyan'
   ctx.lineWidth = 1 / scale
   ctx.strokeRect(x, y, w, h)
+
+  ctx.restore()
+}
+
+const drawClusters = (ctx) => {
+  const state = drillStore.optimizerState
+  if (!state.running || state.clusterConvexHulls.length === 0) return
+
+  ctx.save()
+
+  for (let i = 0; i < state.clusterConvexHulls.length; i++) {
+    const hull = state.clusterConvexHulls[i]
+    if (!hull || hull.length < 3) continue
+
+    const color = state.clusterColors[i] || '#999'
+    const isActive = state.activeCluster === i
+
+    ctx.beginPath()
+    ctx.moveTo(hull[0].x, -hull[0].y)
+    for (let j = 1; j < hull.length; j++) {
+      ctx.lineTo(hull[j].x, -hull[j].y)
+    }
+    ctx.closePath()
+
+    ctx.fillStyle = color + '18'
+    ctx.fill()
+    ctx.strokeStyle = color + (isActive ? 'cc' : '55')
+    ctx.lineWidth = (isActive ? 2 : 1) / scale
+    ctx.stroke()
+  }
+
+  for (let i = 0; i < state.clusterConvexHulls.length; i++) {
+    const hull = state.clusterConvexHulls[i]
+    if (!hull || hull.length === 0) continue
+
+    const color = state.clusterColors[i] || '#999'
+    const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length
+    const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length
+
+    ctx.beginPath()
+    ctx.arc(cx, -cy, 4 / scale, 0, 2 * Math.PI)
+    ctx.fillStyle = color
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 1.5 / scale
+    ctx.stroke()
+  }
 
   ctx.restore()
 }

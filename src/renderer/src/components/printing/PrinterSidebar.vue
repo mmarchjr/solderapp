@@ -5,7 +5,6 @@ import { usePrinterControl } from '@/composables/usePrinterControl'
 import JogWheel from '@/components/jog/JogWheel.vue'
 import JogBar from '@/components/jog/JogBar.vue'
 import PrintConsole from './PrintConsole.vue'
-import SerialPortPicker from '@/components/machine/SerialPortPicker.vue'
 
 const props = defineProps({
   selectedTool: { type: String, default: null }
@@ -22,33 +21,9 @@ const manualCommand = ref('')
 const showEstopModal = ref(false)
 const estopDismissed = ref(false)
 const feedOverride = ref(100)
-const showPortPicker = ref(false)
-const portPickerRef = ref(null)
+const fanPercent = ref(0)
 
 const activePcbs = computed(() => drillStore.pcbs.filter((p) => p.path.length > 0))
-
-function handleConnect() {
-  if (printer.connected) {
-    printerCtrl.disconnect()
-  } else {
-    showPortPicker.value = true
-    setTimeout(() => portPickerRef.value?.loadPorts(), 50)
-  }
-}
-
-async function handlePortSelected(port) {
-  showPortPicker.value = false
-  try {
-    window.api.serial.selectPort(port.portId)
-    await printerCtrl.connect()
-  } catch (err) {
-    console.error('Connection failed:', err)
-  }
-}
-
-function handlePortPickerCancel() {
-  showPortPicker.value = false
-}
 
 function handleHome() {
   printerCtrl.home()
@@ -81,6 +56,10 @@ function handleJogZ({ dz }) {
 
 function handleFeedOverride() {
   printerCtrl.setFeedOverride(feedOverride.value)
+}
+
+function handleFanChange() {
+  printerCtrl.setFanSpeed(fanPercent.value)
 }
 
 function sendCommand() {
@@ -172,71 +151,7 @@ onUnmounted(() => {
 <template>
   <div class="printer-sidebar-root">
     <div class="printer-sidebar">
-      <!-- 1. Connection -->
-      <div class="sidebar-section">
-        <h6 class="section-title"><i class="fa-solid fa-plug me-1"></i> Connection</h6>
-        <div class="connection-row">
-          <button
-            class="btn btn-sm flex-grow-1"
-            :class="printer.connected ? 'btn-outline-danger' : 'btn-success'"
-            @click="handleConnect"
-          >
-            <i class="fa-solid me-1" :class="printer.connected ? 'fa-unplug' : 'fa-plug'"></i>
-            {{ printer.connected ? 'Disconnect' : 'Connect' }}
-          </button>
-          <span class="led-indicator" :class="{ green: printer.connected, red: false }"></span>
-        </div>
-        <div v-if="printer.connected" class="connection-info">
-          <small class="text-muted">
-            <i class="fa-solid fa-microchip me-1"></i>
-            {{ printer.firmware || 'Connected' }}
-          </small>
-        </div>
-      </div>
-
-      <!-- 2. Status -->
-      <div class="sidebar-section">
-        <h6 class="section-title"><i class="fa-solid fa-circle-info me-1"></i> Status</h6>
-        <div class="status-row">
-          <span
-            class="badge"
-            :class="{
-              'bg-success': !printer.printing && printer.connected,
-              'bg-warning': printer.printing && !printer.paused,
-              'bg-secondary': !printer.connected,
-              'bg-info': printer.paused
-            }"
-          >
-            {{
-              !printer.connected
-                ? 'Disconnected'
-                : printer.printing
-                  ? printer.paused
-                    ? 'Paused'
-                    : 'Printing'
-                  : 'Idle'
-            }}
-          </span>
-          <span v-if="printer.homed" class="badge bg-success-subtle text-success">Homed</span>
-          <span v-else class="badge bg-danger-subtle text-danger">Not Homed</span>
-        </div>
-        <div v-if="printer.printing" class="print-progress mt-2">
-          <div class="progress" style="height: 6px">
-            <div
-              class="progress-bar bg-warning"
-              :style="{
-                width: (printer.currentPoint / Math.max(printer.totalPoints, 1)) * 100 + '%'
-              }"
-            ></div>
-          </div>
-          <small class="text-muted mt-1 d-block">
-            {{ printer.currentPoint }}/{{ printer.totalPoints }} points | Elapsed
-            {{ formatTime(printer.elapsed) }}
-          </small>
-        </div>
-      </div>
-
-      <!-- 3. Jog Controls -->
+      <!-- 1. Jog Controls -->
       <div class="sidebar-section">
         <h6 class="section-title">
           <i class="fa-solid fa-arrows-up-down-left-right me-1"></i> Jog
@@ -304,7 +219,9 @@ onUnmounted(() => {
         </div>
         <button
           class="btn btn-sm btn-outline-primary w-100 mt-2"
-          :disabled="!printer.connected || printer.printing"
+          :disabled="
+            !printer.connected || printer.printing || printer.isHoming || printer.isHomeCoolingDown
+          "
           @click="handleHome"
         >
           <i class="fa-solid fa-house me-1"></i> Home All Axes
@@ -356,6 +273,31 @@ onUnmounted(() => {
             @change="handleFeedOverride"
           />
         </div>
+        <div class="fan-control mt-2">
+          <label class="form-label text-muted small mb-1"> Fan: {{ fanPercent }}% </label>
+          <div class="d-flex align-items-center gap-2">
+            <input
+              v-model.number="fanPercent"
+              type="range"
+              class="form-range flex-grow-1"
+              min="0"
+              max="100"
+              step="1"
+              :disabled="!printer.connected"
+              @change="handleFanChange"
+            />
+            <input
+              v-model.number="fanPercent"
+              type="number"
+              class="form-control form-control-sm"
+              style="width: 60px"
+              min="0"
+              max="100"
+              :disabled="!printer.connected"
+              @change="handleFanChange"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- 5. Solder Tools -->
@@ -388,36 +330,45 @@ onUnmounted(() => {
     </div>
 
     <Teleport to="body">
-      <SerialPortPicker
-        v-if="showPortPicker"
-        ref="portPickerRef"
-        @select="handlePortSelected"
-        @cancel="handlePortPickerCancel"
-      />
-
       <div
         v-if="showEstopModal"
-        class="modal-backdrop-custom"
-        @click.self="
-          () => {
-            showEstopModal = false
-          }
+        style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2000;
         "
+        tabindex="0"
+        @click.self="showEstopModal = false"
+        @keydown.escape="showEstopModal = false"
       >
-        <div class="modal-dialog" style="max-width: 400px">
-          <div class="modal-content">
-            <div class="modal-header border-danger">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px; margin: 2rem">
+          <div
+            class="modal-content"
+            style="
+              background: #fff;
+              border-radius: 0.5rem;
+              box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+            "
+          >
+            <div class="modal-header border-danger" style="padding: 1.25rem 1.5rem">
               <h5 class="modal-title text-danger">
                 <i class="fa-solid fa-circle-exclamation me-2"></i> Emergency Stop
               </h5>
               <button type="button" class="btn-close" @click="showEstopModal = false"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 1.5rem">
               <p>
                 Motors will be disabled immediately. Printer will disconnect. Position will be lost.
               </p>
             </div>
-            <div class="modal-footer border-danger">
+            <div class="modal-footer border-danger" style="padding: 1rem 1.5rem">
               <button class="btn btn-secondary" @click="showEstopModal = false">Abort</button>
               <button class="btn btn-danger" @click="confirmEstop">
                 <i class="fa-solid fa-bolt me-1"></i> E-Stop Now
@@ -456,39 +407,6 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
-}
-
-.connection-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.led-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #666;
-  flex-shrink: 0;
-}
-
-.led-indicator.green {
-  background: #4caf50;
-  box-shadow: 0 0 6px #4caf50;
-}
-
-.led-indicator.red {
-  background: #f44336;
-}
-
-.connection-info {
-  margin-top: 4px;
-}
-
-.status-row {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
 }
 
 .jog-layout {
@@ -531,18 +449,5 @@ onUnmounted(() => {
 
 .print-button-section {
   border-bottom: none;
-}
-
-.modal-backdrop-custom {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
 }
 </style>

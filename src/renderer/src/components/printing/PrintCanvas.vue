@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useDrillStore } from '@/stores/store'
 import { usePrinterControl } from '@/composables/usePrinterControl'
 
@@ -13,7 +13,7 @@ const drillStore = useDrillStore()
 const printerCtrl = usePrinterControl()
 
 const canvas = ref(null)
-let ctx,
+let ctx = null,
   scale = 1,
   offsetX = 0,
   offsetY = 0
