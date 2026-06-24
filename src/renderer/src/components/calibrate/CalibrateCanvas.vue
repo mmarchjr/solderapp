@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick} from 'vue'
 import { useDrillStore } from '@/stores/store'
 
 const emit = defineEmits(['point-clicked'])
@@ -14,7 +14,7 @@ const props = defineProps({
 const drillStore = useDrillStore()
 
 const canvas = ref(null)
-let ctx,
+let ctx = null,
   scale = 1,
   offsetX = 0,
   offsetY = 0
@@ -33,12 +33,14 @@ function resizeCanvas() {
   const canvasEl = canvas.value
   if (!canvasEl) return
   const dpr = window.devicePixelRatio || 1
+  if (!canvasEl.parentElement) return
   const width = canvasEl.parentElement.clientWidth
   const height = canvasEl.parentElement.clientHeight
   canvasEl.width = width * dpr
   canvasEl.height = height * dpr
   canvasEl.style.width = width + 'px'
   canvasEl.style.height = height + 'px'
+  if (!ctx) return
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.scale(dpr, dpr)
   offsetX = width / 3
@@ -279,6 +281,7 @@ function handlePointerUp(e) {
 }
 
 function handleClick(e) {
+  if (!canvas.value) return
   const rect = canvas.value.getBoundingClientRect()
   const mx = (e.clientX - rect.left - offsetX) / scale
   const my = -(e.clientY - rect.top - offsetY) / scale

@@ -15,20 +15,14 @@
               v-model.number="drillStore.originOffsetX"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              @input="
-                saveOffsetUndoState()
-                updateCanvas()
-              "
+              @input="(saveOffsetUndoState(), updateCanvas())"
             />
             <label class="form-label"><i class="fas fa-arrows-alt-v pcb-icon"></i></label>
             <input
               v-model.number="drillStore.originOffsetY"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              @input="
-                saveOffsetUndoState()
-                updateCanvas()
-              "
+              @input="(saveOffsetUndoState(), updateCanvas())"
             />
 
             <label class="form-label pcb-section">Rotate</label>
@@ -174,10 +168,7 @@
                   class="pcb-list-item d-flex align-items-center"
                   :class="{ active: pcb.id === drillStore.activePcbId }"
                   draggable="true"
-                  @click="
-                    drillStore.setActivePcb(pcb.id)
-                    updateCanvas()
-                  "
+                  @click="(drillStore.setActivePcb(pcb.id), updateCanvas())"
                   @contextmenu.prevent="showPcbContextMenu($event, idx)"
                   @dragstart="onPcbDragStart(idx, $event)"
                   @dragover.prevent="onPcbDragOver(idx, $event)"
@@ -191,10 +182,7 @@
                   <button
                     class="btn btn-sm btn-link p-0 text-decoration-none"
                     title="Calculate PCB Offset"
-                    @click.stop="
-                      drillStore.setActivePcb(pcb.id)
-                      toggleOriginCalculator()
-                    "
+                    @click.stop="(drillStore.setActivePcb(pcb.id), toggleOriginCalculator())"
                   >
                     <i class="fa-solid fa-crosshairs"></i>
                   </button>
@@ -238,10 +226,7 @@
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
                     step="0.5"
-                    @input="
-                      saveOffsetUndoState()
-                      updateCanvas()
-                    "
+                    @input="(saveOffsetUndoState(), updateCanvas())"
                   />
                 </div>
                 <div class="d-flex align-items-center mb-1">
@@ -251,10 +236,7 @@
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
                     step="0.5"
-                    @input="
-                      saveOffsetUndoState()
-                      updateCanvas()
-                    "
+                    @input="(saveOffsetUndoState(), updateCanvas())"
                   />
                 </div>
                 <div class="d-flex align-items-center mb-1">
@@ -520,7 +502,8 @@ import {
   watch,
   onBeforeUnmount,
   nextTick,
-  defineAsyncComponent
+  defineAsyncComponent,
+  Ref
 } from 'vue'
 const GcodeSimulator = defineAsyncComponent(() => import('@/components/gcode/GcodeSimulator.vue'))
 const ImportWizard = defineAsyncComponent(() => import('@/components/import/ImportWizard.vue'))
@@ -536,11 +519,11 @@ const { parseDrillFile, parseProjectFile, saveProject } = useFileHandlers()
 const { generateGcode, saveGcodeFile, getSolderPoints, checkForRiskyLeftMoves } =
   useGcodeGenerator()
 
-const props = defineProps({
-  readOnly: { type: Boolean, default: false }
-})
+// const props = defineProps({
+//   readOnly: { type: Boolean, default: false }
+// })
 
-function checkAndWarnRiskyLeftMove(addedId) {
+function checkAndWarnRiskyLeftMove() {
   const profile = drillStore.profiles[drillStore.currentProfile]
   const threshold = profile.leftMoveWarningDistance
   const yTolerance = profile.leftMoveYTolerance ?? 5
@@ -577,19 +560,19 @@ const selectedProfile = computed({
   set: (val) => drillStore.setCurrentProfile(val)
 })
 
-// Homing inputs
-const homeX = computed({
-  get: () => drillStore.profiles[drillStore.currentProfile].homeX,
-  set: (val) => drillStore.updateCurrentProfileSettings({ homeX: val })
-})
-const homeY = computed({
-  get: () => drillStore.profiles[drillStore.currentProfile].homeY,
-  set: (val) => drillStore.updateCurrentProfileSettings({ homeY: val })
-})
-const homeZ = computed({
-  get: () => drillStore.profiles[drillStore.currentProfile].homeZ,
-  set: (val) => drillStore.updateCurrentProfileSettings({ homeZ: val })
-})
+// // Homing inputs
+// const homeX = computed({
+//   get: () => drillStore.profiles[drillStore.currentProfile].homeX,
+//   set: (val) => drillStore.updateCurrentProfileSettings({ homeX: val })
+// })
+// const homeY = computed({
+//   get: () => drillStore.profiles[drillStore.currentProfile].homeY,
+//   set: (val) => drillStore.updateCurrentProfileSettings({ homeY: val })
+// })
+// const homeZ = computed({
+//   get: () => drillStore.profiles[drillStore.currentProfile].homeZ,
+//   set: (val) => drillStore.updateCurrentProfileSettings({ homeZ: val })
+// })
 
 let pendingRenderFrame = null
 
@@ -612,7 +595,7 @@ const editorLabels = ref([
 const currentLabelIndex = ref(0)
 const lastSelectedIndex = ref(null)
 
-let ctx,
+let ctx = null,
   scale = 1,
   offsetX = 0,
   offsetY = 0
@@ -684,8 +667,7 @@ const saveGcode = () => {
     saveGcodeFile(gcode)
     console.log('G-code saved successfully!')
   } catch (error) {
-    console.error('Error generating G-code:', error)
-    alert(`Error generating G-code: ${error.message}`)
+    alert('Error saving G-code: ' + (error instanceof Error ? error.message : 'Unknown error'))
   }
 }
 
@@ -718,10 +700,23 @@ const openSimulator = () => {
     }
 
     const gcode = generateGcode()
+    if (!simulatorRef.value) {
+      console.error('Simulator reference is not set.')
+      alert('Error: Simulator is not available.')
+      return
+    }
     simulatorRef.value.show(gcode)
   } catch (error) {
     console.error('Error opening simulator:', error)
-    alert(`Error: ${error.message}`)
+    try {
+      if (error instanceof Error) {
+        alert(`Error: ${error.message}`)
+      } else {
+        alert('An unknown error occurred while opening the simulator.')
+      }
+    } catch (alertError) {
+      console.error('Error displaying alert:', alertError)
+    }
   }
 }
 
@@ -782,7 +777,7 @@ const resizeCanvas = () => {
   canvasEl.height = height * dpr
   canvasEl.style.width = width + 'px'
   canvasEl.style.height = height + 'px'
-
+  if (!ctx) return
   ctx.setTransform(1, 0, 0, 1, 0, 0) // reset transform
   ctx.scale(dpr, dpr)
 
@@ -865,7 +860,7 @@ onMounted(async () => {
   if (!drillStore.profiles[selectedProfile.value]) {
     drillStore.initProfiles()
   }
-  const s = drillStore.profiles[selectedProfile.value] || {}
+  // const s = drillStore.profiles[selectedProfile.value] || {}
 
   resizeCanvas() // sets canvas size and devicePixelRatio
   fitCanvasToBuildPlate() // zooms and centers based on build plate
@@ -1016,7 +1011,7 @@ const onSolderToggle = (hole) => {
     drillStore.removeFromPath(hole.id)
   } else {
     drillStore.addToPath(hole.id)
-    if (!checkAndWarnRiskyLeftMove(hole.id)) {
+    if (!checkAndWarnRiskyLeftMove()) {
       drillStore.removeFromPath(hole.id)
       hole.solder = false
     }
@@ -1159,7 +1154,9 @@ const updateCanvas = () => {
       'ch=',
       canvas.value?.height
     )
+    if (!ctx) return
     ctx.setTransform(1, 0, 0, 1, 0, 0)
+    if (!canvas.value) return
     ctx.clearRect(0, 0, canvas.value.width, canvas.value.height)
     ctx.scale(dpr, dpr)
     ctx.save()
@@ -1186,7 +1183,7 @@ const updateCanvas = () => {
       const pcb = drillStore.pcbs[pcbIdx]
       const isActive = pcb.id === drillStore.activePcbId
       const alpha = isActive ? 1.0 : 0.35
-
+      if (!ctx) return
       ctx.save()
       ctx.globalAlpha = alpha
       ctx.translate(pcb.originOffsetX, -pcb.originOffsetY)

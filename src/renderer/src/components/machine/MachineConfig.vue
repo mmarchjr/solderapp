@@ -932,8 +932,7 @@ onBeforeUnmount(() => {
                   type="button"
                   class="dropdown-item"
                   @click="
-                    addLagrangeRowBelow(lagrangeContextMenu.rowIndex)
-                    hideLagrangeContextMenu()
+                    (addLagrangeRowBelow(lagrangeContextMenu.rowIndex), hideLagrangeContextMenu())
                   "
                 >
                   <i class="fa-solid fa-plus me-2"></i>Add Row Below
@@ -943,8 +942,7 @@ onBeforeUnmount(() => {
                   class="dropdown-item text-danger"
                   :disabled="lagrangeRows.length <= 1"
                   @click="
-                    deleteLagrangeRow(lagrangeContextMenu.rowIndex)
-                    hideLagrangeContextMenu()
+                    (deleteLagrangeRow(lagrangeContextMenu.rowIndex), hideLagrangeContextMenu())
                   "
                 >
                   <i class="fa-solid fa-trash me-2"></i>Delete Row
