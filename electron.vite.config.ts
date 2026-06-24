@@ -1,14 +1,19 @@
 import { resolve } from 'path'
-import { defineConfig } from 'electron-vite'
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   main: {
     build: {
       rollupOptions: {
+        input: {
+          index: resolve('src/main/index.ts'),
+          'optimizer/worker': resolve('src/main/optimizer/worker.ts')
+        },
         external: ['serialport']
       }
-    }
+    },
+    plugins: [externalizeDepsPlugin()]
   },
   preload: {},
   renderer: {

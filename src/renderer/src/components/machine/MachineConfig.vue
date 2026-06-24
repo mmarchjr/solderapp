@@ -7,6 +7,7 @@ import PadAreaMap from '@/components/ui/PadAreaMap.vue'
 import { useDrillStore } from '@/stores/store'
 
 const drillStore = useDrillStore()
+const padAreaMapRef = ref(null)
 const settingsFileInput = ref(null)
 
 // Serial settings
@@ -167,6 +168,26 @@ const periodicAtEnd = computed({
   set: (val) => drillStore.updateCurrentProfileSettings({ periodicAtEnd: val })
 })
 
+const feedCalibrateBeforeGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].feedCalibrateBeforeGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ feedCalibrateBeforeGcode: val })
+})
+
+const feedCalibrateAfterGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].feedCalibrateAfterGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ feedCalibrateAfterGcode: val })
+})
+
+const offsetCalibrateBeforeGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].offsetCalibrateBeforeGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ offsetCalibrateBeforeGcode: val })
+})
+
+const offsetCalibrateAfterGcode = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].offsetCalibrateAfterGcode ?? '',
+  set: (val) => drillStore.updateCurrentProfileSettings({ offsetCalibrateAfterGcode: val })
+})
+
 // Add new computed property for point offset X
 const solderOffset = computed({
   get: () => drillStore.profiles[drillStore.currentProfile].solderOffset ?? 0,
@@ -182,6 +203,41 @@ const leftMoveYTolerance = computed({
   get: () => drillStore.profiles[drillStore.currentProfile].leftMoveYTolerance ?? 5,
   set: (val) => drillStore.updateCurrentProfileSettings({ leftMoveYTolerance: val })
 })
+
+const targetPointsPerCluster = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].targetPointsPerCluster ?? 8,
+  set: (val) => drillStore.updateCurrentProfileSettings({ targetPointsPerCluster: val })
+})
+
+const softBoundaryDistance = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].softBoundaryDistance ?? 5,
+  set: (val) => drillStore.updateCurrentProfileSettings({ softBoundaryDistance: val })
+})
+
+const maxPointsPerCluster = computed({
+  get: () => drillStore.profiles[drillStore.currentProfile].maxPointsPerCluster ?? 15,
+  set: (val) => drillStore.updateCurrentProfileSettings({ maxPointsPerCluster: val })
+})
+
+const showClusteringSettings = ref(false)
+
+function parseDiameter(sizeValue) {
+  if (typeof sizeValue === 'number') return Number.isFinite(sizeValue) ? sizeValue : NaN
+  if (typeof sizeValue !== 'string') return NaN
+  const match = sizeValue.match(/[\d.]+/)
+  return match ? Number(match[0]) : NaN
+}
+
+function getPadColorForArea(area) {
+  const map = padAreaMapRef.value?.diameterColorMap
+  if (!map) return '#999'
+  const roundedArea = Math.round(area * 100) / 100
+  for (const [diameter, color] of map.entries()) {
+    const padArea = Math.round(Math.PI * Math.pow(diameter / 2, 2) * 100) / 100
+    if (Math.abs(padArea - roundedArea) < 0.01) return color
+  }
+  return '#999'
+}
 
 function resetToDefaults() {
   drillStore.resetCurrentProfileToDefault()
@@ -580,6 +636,78 @@ onBeforeUnmount(() => {
                   Only flag leftward moves between pads whose Y centers are within this distance.
                   Pads at very different heights are less likely to bridge.
                 </div>
+
+                <button
+                  class="btn btn-outline-secondary btn-sm mt-3"
+                  @click="showClusteringSettings = !showClusteringSettings"
+                >
+                  <i class="fa-solid fa-layer-group me-1"></i>
+                  Clustering Settings
+                  <i
+                    class="fa-solid fa-chevron-down ms-1"
+                    :class="{ 'fa-rotate-180': showClusteringSettings }"
+                  ></i>
+                </button>
+
+                <div
+                  v-if="showClusteringSettings"
+                  class="clustering-settings mt-2 p-3 border rounded"
+                >
+                  <label
+                    class="form-label"
+                    title="Target number of points per cluster when auto-clustering is enabled (>15 points)"
+                  >
+                    Target Points Per Cluster
+                  </label>
+                  <input
+                    v-model.number="targetPointsPerCluster"
+                    type="number"
+                    class="form-control"
+                    step="1"
+                    min="3"
+                    max="50"
+                  />
+                  <div class="form-text">
+                    Boards with more than 15 solder points are auto-clustered. This controls the
+                    target group size.
+                  </div>
+
+                  <label
+                    class="form-label mt-3"
+                    title="Hard limit on points per cluster. Oversized clusters are split further."
+                  >
+                    Max Points Per Cluster
+                  </label>
+                  <input
+                    v-model.number="maxPointsPerCluster"
+                    type="number"
+                    class="form-control"
+                    step="1"
+                    min="3"
+                    max="50"
+                  />
+                  <div class="form-text">
+                    Clusters exceeding this size are automatically split into smaller sub-clusters.
+                  </div>
+
+                  <label
+                    class="form-label mt-3"
+                    title="Distance threshold for sharing points between adjacent clusters"
+                  >
+                    Soft Boundary Distance (mm)
+                  </label>
+                  <input
+                    v-model.number="softBoundaryDistance"
+                    type="number"
+                    class="form-control"
+                    step="0.5"
+                    min="0"
+                  />
+                  <div class="form-text">
+                    Points within this distance of an adjacent cluster are included in both
+                    clusters' optimization.
+                  </div>
+                </div>
               </div>
 
               <div class="col-md-6">
@@ -663,6 +791,54 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
+            <!-- Calibration G-code -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <h5><i class="fa-solid fa-bullseye"></i> Calibration G-code</h5>
+                <p class="text-muted small">
+                  G-code executed before/after feed and offset calibration in the Calibrate tab.
+                  Feed Before variables: <code>{SAFE_Z}</code>, <code>{X}</code>, <code>{Y}</code>,
+                  <code>{Z_OFFSET}</code>, <code>{SOLDER_PRIME_Z}</code>, <code>{PRIME}</code>,
+                  <code>{PRIME_RETRACT}</code>, <code>{SOLDER_OFFSET}</code>, <code>{SOAK}</code>.
+                  After/Offset variables: <code>{SAFE_Z}</code>, <code>{RETRACT}</code>.
+                </p>
+              </div>
+
+              <div class="col-md-6">
+                <GcodeEditor
+                  :code="feedCalibrateBeforeGcode"
+                  title="Feed Calibrate — Before"
+                  icon="fa-arrow-right"
+                  @update:code="feedCalibrateBeforeGcode = $event"
+                />
+              </div>
+              <div class="col-md-6">
+                <GcodeEditor
+                  :code="feedCalibrateAfterGcode"
+                  title="Feed Calibrate — After"
+                  icon="fa-arrow-left"
+                  @update:code="feedCalibrateAfterGcode = $event"
+                />
+              </div>
+
+              <div class="col-md-6 mt-3">
+                <GcodeEditor
+                  :code="offsetCalibrateBeforeGcode"
+                  title="Offset Calibrate — Before"
+                  icon="fa-arrow-right"
+                  @update:code="offsetCalibrateBeforeGcode = $event"
+                />
+              </div>
+              <div class="col-md-6 mt-3">
+                <GcodeEditor
+                  :code="offsetCalibrateAfterGcode"
+                  title="Offset Calibrate — After"
+                  icon="fa-arrow-left"
+                  @update:code="offsetCalibrateAfterGcode = $event"
+                />
+              </div>
+            </div>
+
             <!-- Lagrange Table -->
             <div class="row mt-4">
               <div class="col-12">
@@ -675,7 +851,7 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="col-md-7">
-                <PadAreaMap />
+                <PadAreaMap ref="padAreaMapRef" />
               </div>
 
               <div class="col-md-5">
@@ -683,6 +859,7 @@ onBeforeUnmount(() => {
                   <table class="table table-sm table-bordered align-middle mb-0 lagrange-table">
                     <thead class="table-light">
                       <tr>
+                        <th>Color</th>
                         <th>Pad Area (mm²)</th>
                         <th>Soak</th>
                         <th>Feed</th>
@@ -695,6 +872,12 @@ onBeforeUnmount(() => {
                         :key="`lagrange-row-${index}`"
                         @contextmenu="openLagrangeContextMenu($event, index)"
                       >
+                        <td>
+                          <span
+                            class="color-dot"
+                            :style="{ backgroundColor: getPadColorForArea(row.area) }"
+                          ></span>
+                        </td>
                         <td>
                           <input
                             type="number"
@@ -729,7 +912,9 @@ onBeforeUnmount(() => {
                             class="form-control form-control-sm"
                             :value="row.dwell"
                             step="0.1"
-                            @change="updateLagrangeCell(index, 'dwell', $event.target.valueAsNumber)"
+                            @change="
+                              updateLagrangeCell(index, 'dwell', $event.target.valueAsNumber)
+                            "
                           />
                         </td>
                       </tr>
@@ -746,7 +931,9 @@ onBeforeUnmount(() => {
                 <button
                   type="button"
                   class="dropdown-item"
-                  @click="addLagrangeRowBelow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
+                  @click="
+                    (addLagrangeRowBelow(lagrangeContextMenu.rowIndex), hideLagrangeContextMenu())
+                  "
                 >
                   <i class="fa-solid fa-plus me-2"></i>Add Row Below
                 </button>
@@ -754,7 +941,9 @@ onBeforeUnmount(() => {
                   type="button"
                   class="dropdown-item text-danger"
                   :disabled="lagrangeRows.length <= 1"
-                  @click="deleteLagrangeRow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
+                  @click="
+                    (deleteLagrangeRow(lagrangeContextMenu.rowIndex), hideLagrangeContextMenu())
+                  "
                 >
                   <i class="fa-solid fa-trash me-2"></i>Delete Row
                 </button>
@@ -792,6 +981,15 @@ onBeforeUnmount(() => {
 
 .lagrange-table input {
   min-width: 90px;
+}
+
+.color-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #333;
+  flex-shrink: 0;
 }
 
 .lagrange-context-menu {

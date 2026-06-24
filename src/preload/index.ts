@@ -6,6 +6,22 @@ const api = {
   serial: {
     getPorts: () => ipcRenderer.invoke('serial:get-ports'),
     selectPort: (portId: string) => ipcRenderer.send('serial:select-port', portId)
+  },
+  optimizer: {
+    start: (data: unknown) => ipcRenderer.invoke('optimize:start', data),
+    pause: () => ipcRenderer.send('optimize:pause'),
+    resume: () => ipcRenderer.send('optimize:resume'),
+    cancel: () => ipcRenderer.send('optimize:cancel'),
+    onUpdate: (cb: (data: unknown) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => cb(data)
+      ipcRenderer.on('optimize:update', handler)
+      return () => ipcRenderer.removeListener('optimize:update', handler)
+    },
+    onDone: (cb: (data: unknown) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, data: unknown): void => cb(data)
+      ipcRenderer.on('optimize:done', handler)
+      return () => ipcRenderer.removeListener('optimize:done', handler)
+    }
   }
 }
 

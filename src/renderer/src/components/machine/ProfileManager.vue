@@ -21,7 +21,7 @@
             <a
               class="dropdown-item"
               href="#"
-              @click.prevent="showNewProfile = true; isDropdownOpen = false"
+              @click.prevent="((showNewProfile = true), (isDropdownOpen = false))"
             >
               <i class="fas fa-plus me-2"></i>New Profile
             </a>
@@ -30,7 +30,7 @@
             <a
               class="dropdown-item"
               href="#"
-              @click.prevent="showDuplicateProfile = true; isDropdownOpen = false"
+              @click.prevent="((showDuplicateProfile = true), (isDropdownOpen = false))"
             >
               <i class="fas fa-copy me-2"></i>Duplicate Profile
             </a>
@@ -39,7 +39,7 @@
             <a
               class="dropdown-item"
               href="#"
-              @click.prevent="showRenameProfile = true; isDropdownOpen = false"
+              @click.prevent="((showRenameProfile = true), (isDropdownOpen = false))"
             >
               <i class="fas fa-edit me-2"></i>Rename Profile
             </a>
@@ -50,7 +50,7 @@
               class="dropdown-item text-danger"
               href="#"
               :class="{ disabled: profileNames.length <= 1 }"
-              @click.prevent="deleteCurrentProfile; isDropdownOpen = false"
+              @click.prevent="(deleteCurrentProfile, (isDropdownOpen = false))"
             >
               <i class="fas fa-trash me-2"></i>Delete Profile
             </a>

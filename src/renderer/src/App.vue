@@ -15,7 +15,7 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { useRoute } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
 import { useDrillStore } from '@/stores/store'
