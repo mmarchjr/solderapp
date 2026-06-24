@@ -377,6 +377,8 @@ watch(
   () => drillStore.activePcbId,
   () => nextTick(fitToPads)
 )
+
+defineExpose({ diameterColorMap })
 </script>
 
 <style scoped>

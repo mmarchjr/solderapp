@@ -50,8 +50,6 @@
 
 **Origin Setting** — The process of aligning a PCB's coordinate system with the printer. Involves homing, jogging to the PCB's first drill point, and confirming the position.
 
-**Stepper Timeout Disable** — M17 S0 command that keeps steppers energized indefinitely, preventing position loss during extended operations.
-
 **Flow Control** — Marlin's ok-protocol: send one line, wait for `ok` response, send next. Prevents serial buffer overflow.
 
 **Feed Override** — Real-time speed multiplier (M220) applied to all moves. Range: 0-200%, default 100%.
@@ -68,7 +66,7 @@
 
 **Printing** — G-code is being streamed to the printer.
 
-**Paused** — Print paused (motors disabled via M84). Resume requires M17 + G28.
+**Paused** — Print paused (motors disabled via M84). Resume requires G28.
 
 ## UI Concepts
 

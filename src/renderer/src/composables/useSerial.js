@@ -195,7 +195,7 @@ function startIdleKeepAlive(intervalMs = 15000) {
   stopIdleKeepAlive()
   idleKeepAliveInterval = setInterval(() => {
     if (isConnected.value) {
-      send('M17 S0').catch(() => {})
+      send('M105').catch(() => {})
     }
   }, intervalMs)
 }

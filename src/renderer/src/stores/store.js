@@ -26,7 +26,6 @@ export function createPcb(overrides = {}) {
 const startGcodeTemplate = `
 ; Start G-code
 M117 Homing XYZ
-M17 S0
 M500
 G28 X Y ; Home X and Y
 G28 Z ; Home Z

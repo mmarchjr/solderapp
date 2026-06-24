@@ -14,6 +14,7 @@
           >
             <i class="fa-solid fa-route me-1"></i> Path
           </button>
+          <!--
           <button
             class="tab-btn"
             :class="{ active: activeTab === 'calibrate' }"
@@ -21,6 +22,7 @@
           >
             <i class="fa-solid fa-bullseye me-1"></i> Calibrate
           </button>
+          -->
           <button
             class="tab-btn"
             :class="{ active: activeTab === 'print' }"

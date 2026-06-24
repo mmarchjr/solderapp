@@ -147,7 +147,6 @@ export function usePrinterControl() {
     setPrinter('portName', serial.portName.value)
     setPrinter('firmware', serial.firmwareInfo.value)
     serial.onData(handleSerialData)
-    await serial.send('M17 S0')
     serial.startIdleKeepAlive(15000)
   }
 
@@ -218,7 +217,6 @@ export function usePrinterControl() {
     isRelativeMode.value = false
     try {
       await serial.sendWithResponse('G28', 'ok', 30000)
-      await serial.send('M17 S0')
     } catch (e) {
       console.error('Home error:', e)
     }
@@ -234,7 +232,6 @@ export function usePrinterControl() {
 
   async function jogX(step) {
     if (!printer.value.homed) return
-    await serial.send('M17 S0')
     await ensureRelativeMode()
     const newX = printer.value.position.x + step
     if (newX < 0 || newX > (drillStore.currentBedWidth || 235)) return
@@ -245,7 +242,6 @@ export function usePrinterControl() {
 
   async function jogY(step) {
     if (!printer.value.homed) return
-    await serial.send('M17 S0')
     await ensureRelativeMode()
     const newY = printer.value.position.y + step
     if (newY < 0 || newY > (drillStore.currentBedHeight || 235)) return
@@ -256,7 +252,6 @@ export function usePrinterControl() {
 
   async function jogZ(step) {
     if (!printer.value.homed) return
-    await serial.send('M17 S0')
     await ensureRelativeMode()
     await serial.send(`G1 Z${step} F${jogFeedZ.value}`)
     const pos = { ...printer.value.position, z: printer.value.position.z + step }
@@ -264,7 +259,6 @@ export function usePrinterControl() {
   }
 
   async function moveTo(x, y) {
-    await serial.send('M17 S0')
     await ensureAbsoluteMode()
     const bedW = drillStore.currentBedWidth || 235
     const bedH = drillStore.currentBedHeight || 235
@@ -312,8 +306,6 @@ export function usePrinterControl() {
   async function resumePrint() {
     if (!printer.value.printing || !printer.value.paused) return
     try {
-      await serial.send('M17')
-      await serial.send('M17 S0')
       await serial.send('G28')
       setPrinter('homed', true)
       setPrinter('paused', false)
@@ -366,7 +358,6 @@ export function usePrinterControl() {
     setPrinter('elapsed', 0)
     printAbortController.value = new AbortController()
 
-    await serial.send('M17 S0')
     serial.stopIdleKeepAlive()
     startPositionSync()
     serial.startKeepAlive(2000)
@@ -467,15 +458,18 @@ export function usePrinterControl() {
     if (!printer.value.homed || !printer.value.connected) return
     const profile = drillStore.profiles[drillStore.currentProfile]
     const safeZ = profile?.solderSafeZ ?? 15
-    await ensureAbsoluteMode()
-    if (printer.value.position.z < safeZ) {
-      await serial.send(`G0 Z${safeZ} F800`)
-      await waitForOk(5000)
-    }
+    const zOffset = (drillPoint.zOffset ?? 0) + (drillPoint.originOffsetZ ?? 0)
+    const clearanceZ = zOffset + safeZ
     const bedCoords = drillStore.drillToBedSpace(drillPoint, pcb)
     const x = bedCoords.x + (drillPoint.xOffset ?? 0)
     const y = bedCoords.y + (drillPoint.yOffset ?? 0)
+
+    await ensureAbsoluteMode()
+    await serial.send(`G0 Z${clearanceZ.toFixed(2)} F800`)
+    await waitForOk(5000)
     await moveTo(x, y)
+    await serial.send(`G0 Z${zOffset.toFixed(2)} F800`)
+    await waitForOk(5000)
   }
 
   async function solderPoint(drillPoint, pcb) {
@@ -545,7 +539,6 @@ export function usePrinterControl() {
     setPrinter('elapsed', 0)
     printAbortController.value = new AbortController()
 
-    await serial.send('M17 S0')
     serial.stopIdleKeepAlive()
     startPositionSync()
     serial.startKeepAlive(2000)
@@ -628,7 +621,6 @@ export function usePrinterControl() {
       const sMatch = cmd.match(/S\s*(\d+)/i)
       fanSpeed.value = sMatch ? Math.round((parseInt(sMatch[1], 10) / 255) * 100) : 100
     }
-    await serial.send('M17 S0')
     await ensureAbsoluteMode()
     await serial.send(cmd)
   }

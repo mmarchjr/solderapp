@@ -7,6 +7,7 @@ import PadAreaMap from '@/components/ui/PadAreaMap.vue'
 import { useDrillStore } from '@/stores/store'
 
 const drillStore = useDrillStore()
+const padAreaMapRef = ref(null)
 const settingsFileInput = ref(null)
 
 // Serial settings
@@ -219,6 +220,24 @@ const maxPointsPerCluster = computed({
 })
 
 const showClusteringSettings = ref(false)
+
+function parseDiameter(sizeValue) {
+  if (typeof sizeValue === 'number') return Number.isFinite(sizeValue) ? sizeValue : NaN
+  if (typeof sizeValue !== 'string') return NaN
+  const match = sizeValue.match(/[\d.]+/)
+  return match ? Number(match[0]) : NaN
+}
+
+function getPadColorForArea(area) {
+  const map = padAreaMapRef.value?.diameterColorMap
+  if (!map) return '#999'
+  const roundedArea = Math.round(area * 100) / 100
+  for (const [diameter, color] of map.entries()) {
+    const padArea = Math.round(Math.PI * Math.pow(diameter / 2, 2) * 100) / 100
+    if (Math.abs(padArea - roundedArea) < 0.01) return color
+  }
+  return '#999'
+}
 
 function resetToDefaults() {
   drillStore.resetCurrentProfileToDefault()
@@ -813,7 +832,7 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="col-md-7">
-                <PadAreaMap />
+                <PadAreaMap ref="padAreaMapRef" />
               </div>
 
               <div class="col-md-5">
@@ -821,6 +840,7 @@ onBeforeUnmount(() => {
                   <table class="table table-sm table-bordered align-middle mb-0 lagrange-table">
                     <thead class="table-light">
                       <tr>
+                        <th>Color</th>
                         <th>Pad Area (mm²)</th>
                         <th>Soak</th>
                         <th>Feed</th>
@@ -833,6 +853,12 @@ onBeforeUnmount(() => {
                         :key="`lagrange-row-${index}`"
                         @contextmenu="openLagrangeContextMenu($event, index)"
                       >
+                        <td>
+                          <span
+                            class="color-dot"
+                            :style="{ backgroundColor: getPadColorForArea(row.area) }"
+                          ></span>
+                        </td>
                         <td>
                           <input
                             type="number"
@@ -930,6 +956,15 @@ onBeforeUnmount(() => {
 
 .lagrange-table input {
   min-width: 90px;
+}
+
+.color-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #333;
+  flex-shrink: 0;
 }
 
 .lagrange-context-menu {
