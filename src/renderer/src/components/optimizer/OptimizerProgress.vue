@@ -1,22 +1,25 @@
 <template>
-  <div class="optimizer-progress-overlay" v-if="visible">
+  <div v-if="visible" class="optimizer-progress-overlay">
     <div class="optimizer-progress-card">
       <div class="optimizer-header">
         <strong>{{ algorithmLabel }}</strong>
-        <span class="optimizer-status" v-if="bestCost > 0">
+        <span v-if="bestCost > 0" class="optimizer-status">
           Best: {{ bestCost.toFixed(1) }}mm
         </span>
       </div>
 
-      <div class="optimizer-details" v-if="totalClusters > 1">
+      <div v-if="totalClusters > 1" class="optimizer-details">
         <span>Cluster {{ clustersDone + 1 }}/{{ totalClusters }}</span>
-        <span v-if="activeCluster !== null" class="cluster-indicator"
-          :style="{ backgroundColor: clusterColors[activeCluster] || '#999' }">
+        <span
+          v-if="activeCluster !== null"
+          class="cluster-indicator"
+          :style="{ backgroundColor: clusterColors[activeCluster] || '#999' }"
+        >
         </span>
         <span>Layer {{ currentDepth }}/{{ totalLayers }}</span>
       </div>
 
-      <div class="optimizer-details" v-else>
+      <div v-else class="optimizer-details">
         <span>Depth {{ currentDepth }}/{{ totalLayers }}</span>
       </div>
 
@@ -25,12 +28,12 @@
       </div>
 
       <div class="optimizer-actions">
-        <button class="btn btn-sm btn-outline-warning" @click="handleStop" :disabled="stopping">
+        <button class="btn btn-sm btn-outline-warning" :disabled="stopping" @click="handleStop">
           <i class="fa-solid fa-stop"></i> {{ stopping ? 'Confirm Stop...' : 'Stop' }}
         </button>
       </div>
 
-      <div class="optimizer-confirm" v-if="stopping">
+      <div v-if="stopping" class="optimizer-confirm">
         <p>Stop optimization? Current best path will be used.</p>
         <div class="d-flex gap-2">
           <button class="btn btn-sm btn-danger" @click="confirmStop">

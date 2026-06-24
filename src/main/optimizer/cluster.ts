@@ -14,11 +14,7 @@ export interface ClusterConfig {
   softBoundaryDistance: number
 }
 
-function kMeans(
-  bedPoints: BedPoint[],
-  k: number,
-  maxIterations = 100
-): number[] {
+function kMeans(bedPoints: BedPoint[], k: number, maxIterations = 100): number[] {
   const n = bedPoints.length
   if (n === 0) return []
   if (k >= n) return bedPoints.map((_, i) => i)
@@ -37,10 +33,7 @@ function kMeans(
       let bestCluster = 0
       let bestDist = Infinity
       for (let c = 0; c < k; c++) {
-        const d = Math.hypot(
-          bedPoints[i].x - centroids[c].x,
-          bedPoints[i].y - centroids[c].y
-        )
+        const d = Math.hypot(bedPoints[i].x - centroids[c].x, bedPoints[i].y - centroids[c].y)
         if (d < bestDist) {
           bestDist = d
           bestCluster = c
@@ -163,11 +156,7 @@ function expandedConvexHull(
   return expanded
 }
 
-export function clusterPoints(
-  points: Point[],
-  pcb: PcbConfig,
-  config: ClusterConfig
-): Cluster[] {
+export function clusterPoints(points: Point[], pcb: PcbConfig, config: ClusterConfig): Cluster[] {
   if (points.length === 0) return []
 
   const bedCoords: BedPoint[] = points.map((p) => drillToBedSpace(p, pcb))
@@ -283,16 +272,40 @@ export function getClusterColor(index: number, total: number): string {
   const h = hue
   const s = 70
   const l = 50
-  const c = (1 - Math.abs(2 * l / 100 - 1)) * s / 100
-  const x = c * (1 - Math.abs((h / 60) % 2 - 1))
+  const c = ((1 - Math.abs((2 * l) / 100 - 1)) * s) / 100
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
   const m = l / 100 - c / 2
-  let r = 0, g = 0, b = 0
-  if (h < 60) { r = c; g = x; b = 0 }
-  else if (h < 120) { r = x; g = c; b = 0 }
-  else if (h < 180) { r = 0; g = c; b = x }
-  else if (h < 240) { r = 0; g = x; b = c }
-  else if (h < 300) { r = x; g = 0; b = c }
-  else { r = c; g = 0; b = x }
-  const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0')
+  let r = 0,
+    g = 0,
+    b = 0
+  if (h < 60) {
+    r = c
+    g = x
+    b = 0
+  } else if (h < 120) {
+    r = x
+    g = c
+    b = 0
+  } else if (h < 180) {
+    r = 0
+    g = c
+    b = x
+  } else if (h < 240) {
+    r = 0
+    g = x
+    b = c
+  } else if (h < 300) {
+    r = x
+    g = 0
+    b = c
+  } else {
+    r = c
+    g = 0
+    b = x
+  }
+  const toHex = (v: number) =>
+    Math.round((v + m) * 255)
+      .toString(16)
+      .padStart(2, '0')
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }

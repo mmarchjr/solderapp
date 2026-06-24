@@ -15,14 +15,20 @@
               v-model.number="drillStore.originOffsetX"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              @input="saveOffsetUndoState(); updateCanvas()"
+              @input="
+                saveOffsetUndoState()
+                updateCanvas()
+              "
             />
             <label class="form-label"><i class="fas fa-arrows-alt-v pcb-icon"></i></label>
             <input
               v-model.number="drillStore.originOffsetY"
               type="number"
               class="form-control d-inline w-auto pcb-input"
-              @input="saveOffsetUndoState(); updateCanvas()"
+              @input="
+                saveOffsetUndoState()
+                updateCanvas()
+              "
             />
 
             <label class="form-label pcb-section">Rotate</label>
@@ -168,7 +174,10 @@
                   class="pcb-list-item d-flex align-items-center"
                   :class="{ active: pcb.id === drillStore.activePcbId }"
                   draggable="true"
-                  @click="drillStore.setActivePcb(pcb.id); updateCanvas()"
+                  @click="
+                    drillStore.setActivePcb(pcb.id)
+                    updateCanvas()
+                  "
                   @contextmenu.prevent="showPcbContextMenu($event, idx)"
                   @dragstart="onPcbDragStart(idx, $event)"
                   @dragover.prevent="onPcbDragOver(idx, $event)"
@@ -182,7 +191,10 @@
                   <button
                     class="btn btn-sm btn-link p-0 text-decoration-none"
                     title="Calculate PCB Offset"
-                    @click.stop="drillStore.setActivePcb(pcb.id); toggleOriginCalculator()"
+                    @click.stop="
+                      drillStore.setActivePcb(pcb.id)
+                      toggleOriginCalculator()
+                    "
                   >
                     <i class="fa-solid fa-crosshairs"></i>
                   </button>
@@ -226,7 +238,10 @@
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
                     step="0.5"
-                    @input="saveOffsetUndoState(); updateCanvas()"
+                    @input="
+                      saveOffsetUndoState()
+                      updateCanvas()
+                    "
                   />
                 </div>
                 <div class="d-flex align-items-center mb-1">
@@ -236,7 +251,10 @@
                     type="number"
                     class="form-control form-control-sm d-inline w-auto"
                     step="0.5"
-                    @input="saveOffsetUndoState(); updateCanvas()"
+                    @input="
+                      saveOffsetUndoState()
+                      updateCanvas()
+                    "
                   />
                 </div>
                 <div class="d-flex align-items-center mb-1">
@@ -336,7 +354,11 @@
 
             <div v-if="!printer.connected || !printer.homed" class="text-center my-3">
               <p class="text-muted mb-2">Printer must be connected and homed</p>
-              <button class="btn btn-primary" :disabled="!printer.connected || printer.isHoming || printer.isHomeCoolingDown" @click="handleHome">
+              <button
+                class="btn btn-primary"
+                :disabled="!printer.connected || printer.isHoming || printer.isHomeCoolingDown"
+                @click="handleHome"
+              >
                 <i class="fa-solid fa-house me-1"></i> Home (G28)
               </button>
             </div>
@@ -1153,7 +1175,10 @@ const updateCanvas = () => {
 
     drawNoGoZones(ctx)
 
-    if (drillStore.optimizerState.running && drillStore.optimizerState.clusterConvexHulls.length > 0) {
+    if (
+      drillStore.optimizerState.running &&
+      drillStore.optimizerState.clusterConvexHulls.length > 0
+    ) {
       drawClusters(ctx)
     }
 

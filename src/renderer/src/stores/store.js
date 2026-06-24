@@ -997,7 +997,10 @@ export const useDrillStore = defineStore(
         pointsToOptimize = selectedPoints
 
         let bottomLeft = selectedPoints[0]
-        let blDist = Math.hypot(drillToBedSpace(bottomLeft, pcb).x, drillToBedSpace(bottomLeft, pcb).y)
+        let blDist = Math.hypot(
+          drillToBedSpace(bottomLeft, pcb).x,
+          drillToBedSpace(bottomLeft, pcb).y
+        )
         for (const p of selectedPoints) {
           const bed = drillToBedSpace(p, pcb)
           const dist = Math.hypot(bed.x, bed.y)
@@ -1012,7 +1015,10 @@ export const useDrillStore = defineStore(
 
         if (pointsToOptimize.length > 0) {
           let bottomLeft = pointsToOptimize[0]
-          let blDist = Math.hypot(drillToBedSpace(bottomLeft, pcb).x, drillToBedSpace(bottomLeft, pcb).y)
+          let blDist = Math.hypot(
+            drillToBedSpace(bottomLeft, pcb).x,
+            drillToBedSpace(bottomLeft, pcb).y
+          )
           for (const p of pointsToOptimize) {
             const bed = drillToBedSpace(p, pcb)
             const dist = Math.hypot(bed.x, bed.y)
@@ -1060,7 +1066,8 @@ export const useDrillStore = defineStore(
         if (data.totalClusters != null) optimizerState.value.totalClusters = data.totalClusters
         if (data.activeCluster != null) optimizerState.value.activeCluster = data.activeCluster
         if (data.clusterColors != null) optimizerState.value.clusterColors = data.clusterColors
-        if (data.clusterConvexHulls != null) optimizerState.value.clusterConvexHulls = data.clusterConvexHulls
+        if (data.clusterConvexHulls != null)
+          optimizerState.value.clusterConvexHulls = data.clusterConvexHulls
 
         if (data.bestPath && data.bestPath.length > 0) {
           pcb.path = [...data.bestPath]

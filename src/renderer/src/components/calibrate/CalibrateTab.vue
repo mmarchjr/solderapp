@@ -8,10 +8,26 @@ import ExtrudeBar from './ExtrudeBar.vue'
 import CalibrateJogControls from './CalibrateJogControls.vue'
 
 const PALETTE = [
-  '#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4',
-  '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990',
-  '#dcbeff', '#9A6324', '#800000', '#aaffc3', '#808000',
-  '#ffd8b1', '#000075', '#a9a9a9', '#000000', '#e6beff'
+  '#e6194b',
+  '#3cb44b',
+  '#4363d8',
+  '#f58231',
+  '#911eb4',
+  '#42d4f4',
+  '#f032e6',
+  '#bfef45',
+  '#fabed4',
+  '#469990',
+  '#dcbeff',
+  '#9A6324',
+  '#800000',
+  '#aaffc3',
+  '#808000',
+  '#ffd8b1',
+  '#000075',
+  '#a9a9a9',
+  '#000000',
+  '#e6beff'
 ]
 
 const drillStore = useDrillStore()
@@ -91,9 +107,15 @@ function buildLagrangeRowsFromStore(curves) {
   dwellCurve.forEach((p) => areas.add(toNumberOrDefault(p.area)))
   const areaList = [...areas].sort((a, b) => a - b)
   if (areaList.length === 0) return [{ area: 0, soak: 0, feed: 0, dwell: 0 }]
-  const soakByArea = new Map(soakCurve.map((p) => [toNumberOrDefault(p.area), toNumberOrDefault(p.value)]))
-  const feedByArea = new Map(feedCurve.map((p) => [toNumberOrDefault(p.area), toNumberOrDefault(p.value)]))
-  const dwellByArea = new Map(dwellCurve.map((p) => [toNumberOrDefault(p.area), toNumberOrDefault(p.value)]))
+  const soakByArea = new Map(
+    soakCurve.map((p) => [toNumberOrDefault(p.area), toNumberOrDefault(p.value)])
+  )
+  const feedByArea = new Map(
+    feedCurve.map((p) => [toNumberOrDefault(p.area), toNumberOrDefault(p.value)])
+  )
+  const dwellByArea = new Map(
+    dwellCurve.map((p) => [toNumberOrDefault(p.area), toNumberOrDefault(p.value)])
+  )
   return areaList.map((area) => ({
     area,
     soak: soakByArea.get(area) ?? 0,
@@ -152,7 +174,13 @@ function hideLagrangeContextMenu() {
   lagrangeContextMenu.value.visible = false
 }
 
-watch(() => drillStore.lagrangeCurves, () => { syncLagrangeRowsFromStore() }, { deep: true, immediate: true })
+watch(
+  () => drillStore.lagrangeCurves,
+  () => {
+    syncLagrangeRowsFromStore()
+  },
+  { deep: true, immediate: true }
+)
 
 function handleGlobalContextClick(e) {
   if (!e.target.closest('.lagrange-table') && !e.target.closest('.lagrange-context-menu')) {
@@ -185,9 +213,15 @@ async function sendCalibrationGcode(template) {
   if (!template || !template.trim()) return
   console.log('[Calibrate] Sending calibration gcode template')
   const profile = currentProfile.value
-  const variables = { SAFE_Z: profile?.solderSafeZ ?? 10, RETRACT: profile?.retractAfterSolder ?? 0.25 }
+  const variables = {
+    SAFE_Z: profile?.solderSafeZ ?? 10,
+    RETRACT: profile?.retractAfterSolder ?? 0.25
+  }
   const processed = processTemplate(template, variables)
-  const lines = processed.split('\n').map((l) => l.split(';')[0].trim()).filter((l) => l.length > 0)
+  const lines = processed
+    .split('\n')
+    .map((l) => l.split(';')[0].trim())
+    .filter((l) => l.length > 0)
   console.log('[Calibrate] Template resolved to', lines.length, 'lines')
   await printerCtrl.ensureAbsoluteMode()
   for (const line of lines) {
@@ -288,7 +322,10 @@ async function runSolderSequenceUpToFeed(drill, pcb) {
 
   const template = profile.feedCalibrateBeforeGcode ?? ''
   const processed = processTemplate(template, vars)
-  const lines = processed.split('\n').map((l) => l.split(';')[0].trim()).filter((l) => l.length > 0)
+  const lines = processed
+    .split('\n')
+    .map((l) => l.split(';')[0].trim())
+    .filter((l) => l.length > 0)
   console.log('[Calibrate] Solder sequence:', lines.length, 'lines')
   for (const line of lines) {
     try {
@@ -307,7 +344,9 @@ async function runSolderSequenceUpToFeed(drill, pcb) {
 
 async function extrudeSolder(amount) {
   if (phase.value !== 'extruding') return
-  console.log(`[Calibrate] Extruding ${amount.toFixed(2)}mm (total: ${(extrudedAmount.value + amount).toFixed(2)}mm)`)
+  console.log(
+    `[Calibrate] Extruding ${amount.toFixed(2)}mm (total: ${(extrudedAmount.value + amount).toFixed(2)}mm)`
+  )
   try {
     await printerCtrl.ensureAbsoluteMode()
     await printerCtrl.serial?.send('M83')
@@ -320,7 +359,9 @@ async function extrudeSolder(amount) {
 
 async function retractSolder(amount) {
   if (phase.value !== 'extruding') return
-  console.log(`[Calibrate] Retracting ${amount.toFixed(2)}mm (total: ${Math.max(0, extrudedAmount.value - amount).toFixed(2)}mm)`)
+  console.log(
+    `[Calibrate] Retracting ${amount.toFixed(2)}mm (total: ${Math.max(0, extrudedAmount.value - amount).toFixed(2)}mm)`
+  )
   try {
     await printerCtrl.ensureAbsoluteMode()
     await printerCtrl.serial?.send('M83')
@@ -336,7 +377,9 @@ function confirmFeedCalibration() {
   const diameter = parseDiameter(selectedPad.value.drill.size)
   const area = getPadAreaFromDiameter(diameter)
   const feedValue = extrudedAmount.value
-  console.log(`[Calibrate] Feed calibration confirmed: area=${area.toFixed(2)}mm², feed=${feedValue.toFixed(2)}mm`)
+  console.log(
+    `[Calibrate] Feed calibration confirmed: area=${area.toFixed(2)}mm², feed=${feedValue.toFixed(2)}mm`
+  )
 
   const curves = { ...drillStore.lagrangeCurves }
   const feedCurve = [...(curves.feed || [])]
@@ -398,7 +441,9 @@ function saveOffsetCalibration() {
   const deltaX = currentPos.x - startPos.x
   const deltaY = currentPos.y - startPos.y
   const deltaZ = currentPos.z - startPos.z
-  console.log(`[Calibrate] Offset delta: deltaX=${deltaX.toFixed(3)}, deltaY=${deltaY.toFixed(3)}, deltaZ=${deltaZ.toFixed(3)}`)
+  console.log(
+    `[Calibrate] Offset delta: deltaX=${deltaX.toFixed(3)}, deltaY=${deltaY.toFixed(3)}, deltaZ=${deltaZ.toFixed(3)}`
+  )
 
   const drill = selectedPad.value.drill
   drill.xOffset = deltaX
@@ -428,7 +473,6 @@ function cancelCalibration() {
   selectedPad.value = null
   extrudedAmount.value = 0
   offsetStartPosition.value = null
-
   ;(async () => {
     try {
       await printerCtrl.ensureAbsoluteMode()
@@ -484,13 +528,13 @@ function getPadColorForArea(area) {
       <div class="text-center p-5">
         <i class="fa-solid fa-bullseye fa-3x text-muted mb-3"></i>
         <h4>Calibrate Feed & Offsets</h4>
-        <p class="text-muted" v-if="drillStore.pcbs.length === 0">
+        <p v-if="drillStore.pcbs.length === 0" class="text-muted">
           Load a PCB in the Path tab to begin calibration.
         </p>
-        <p class="text-muted" v-else-if="!printer.connected">
+        <p v-else-if="!printer.connected" class="text-muted">
           Connect to a printer in the Print tab to begin calibration.
         </p>
-        <p class="text-muted" v-else-if="!printer.homed">
+        <p v-else-if="!printer.homed" class="text-muted">
           Home the printer in the Print tab to begin calibration.
         </p>
       </div>
@@ -534,8 +578,12 @@ function getPadColorForArea(area) {
           <ExtrudeBar
             v-if="calibrationType === 'feed' && (phase === 'soldering' || phase === 'extruding')"
             :extruded-amount="extrudedAmount"
-            :pad-area="selectedPad ? getPadAreaFromDiameter(parseDiameter(selectedPad.drill.size)) : 0"
-            :current-feed="selectedPad ? getLagrangeForPad(parseDiameter(selectedPad.drill.size)).feed : 0"
+            :pad-area="
+              selectedPad ? getPadAreaFromDiameter(parseDiameter(selectedPad.drill.size)) : 0
+            "
+            :current-feed="
+              selectedPad ? getLagrangeForPad(parseDiameter(selectedPad.drill.size)).feed : 0
+            "
             :disabled="phase === 'soldering'"
             @extrude="extrudeSolder"
             @retract="retractSolder"
@@ -545,7 +593,9 @@ function getPadColorForArea(area) {
 
           <!-- Jog controls overlay -->
           <CalibrateJogControls
-            v-if="calibrationType === 'offset' && (phase === 'jogging' || phase === 'offset-jogging')"
+            v-if="
+              calibrationType === 'offset' && (phase === 'jogging' || phase === 'offset-jogging')
+            "
             :printer-position="printer.position"
             :disabled="phase === 'jogging'"
             @jog-xy="handleJogXY"
@@ -663,7 +713,10 @@ function getPadColorForArea(area) {
           <button
             type="button"
             class="dropdown-item"
-            @click="addLagrangeRowBelow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
+            @click="
+              addLagrangeRowBelow(lagrangeContextMenu.rowIndex)
+              hideLagrangeContextMenu()
+            "
           >
             <i class="fa-solid fa-plus me-2"></i>Add Row Below
           </button>
@@ -671,7 +724,10 @@ function getPadColorForArea(area) {
             type="button"
             class="dropdown-item text-danger"
             :disabled="lagrangeRows.length <= 1"
-            @click="deleteLagrangeRow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
+            @click="
+              deleteLagrangeRow(lagrangeContextMenu.rowIndex)
+              hideLagrangeContextMenu()
+            "
           >
             <i class="fa-solid fa-trash me-2"></i>Delete Row
           </button>
@@ -681,11 +737,7 @@ function getPadColorForArea(area) {
         <div class="mt-3">
           <h6 class="text-muted mb-2"><i class="fa-solid fa-palette me-1"></i> Legend</h6>
           <div class="d-flex flex-wrap gap-2">
-            <div
-              v-for="(ps, idx) in padSizes"
-              :key="ps.diameter"
-              class="legend-item"
-            >
+            <div v-for="(ps, idx) in padSizes" :key="ps.diameter" class="legend-item">
               <span class="color-dot" :style="{ backgroundColor: padColorMap[ps.diameter] }"></span>
               <span class="small">{{ ps.diameter.toFixed(2) }}mm (×{{ ps.count }})</span>
             </div>
@@ -790,8 +842,13 @@ function getPadColorForArea(area) {
 }
 
 @keyframes gcode-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .cancel-overlay {

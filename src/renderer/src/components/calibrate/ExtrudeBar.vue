@@ -125,10 +125,18 @@ const extrusionDifference = computed(() => {
 
     <!-- Fine-tune buttons -->
     <div class="d-flex gap-2 mb-3">
-      <button class="btn btn-sm btn-outline-success flex-grow-1" :disabled="disabled" @click="extrude(stepSize)">
+      <button
+        class="btn btn-sm btn-outline-success flex-grow-1"
+        :disabled="disabled"
+        @click="extrude(stepSize)"
+      >
         <i class="fa-solid fa-plus me-1"></i> +{{ stepSize }}
       </button>
-      <button class="btn btn-sm btn-outline-danger flex-grow-1" :disabled="disabled" @click="retract(stepSize)">
+      <button
+        class="btn btn-sm btn-outline-danger flex-grow-1"
+        :disabled="disabled"
+        @click="retract(stepSize)"
+      >
         <i class="fa-solid fa-minus me-1"></i> -{{ stepSize }}
       </button>
     </div>
@@ -209,7 +217,12 @@ const extrusionDifference = computed(() => {
 }
 
 @keyframes gcode-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 </style>

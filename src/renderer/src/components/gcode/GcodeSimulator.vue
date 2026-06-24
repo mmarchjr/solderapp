@@ -640,7 +640,6 @@ function buildPathLine() {
   scene.add(new THREE.Line(geom, mat))
 }
 
-
 function buildIronTip() {
   ironGroup = new THREE.Group()
 

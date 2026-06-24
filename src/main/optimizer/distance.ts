@@ -94,9 +94,7 @@ function getNoGoCorners(margin: number, zones: NoGoZone[]): BedPoint[] {
       { x: z.x1 - margin, y: z.y2 + margin }
     ]
     for (const c of candidates) {
-      const insideAny = zones.some(
-        (oz) => c.x > oz.x1 && c.x < oz.x2 && c.y > oz.y1 && c.y < oz.y2
-      )
+      const insideAny = zones.some((oz) => c.x > oz.x1 && c.x < oz.x2 && c.y > oz.y1 && c.y < oz.y2)
       if (!insideAny) corners.push(c)
     }
   }
@@ -130,8 +128,7 @@ function computeRouteAroundZones(
     visited[u] = true
     for (let v = 0; v < n; v++) {
       if (visited[v]) continue
-      if (segmentCrossesNoGoZone(nodes[u].x, nodes[u].y, nodes[v].x, nodes[v].y, zones))
-        continue
+      if (segmentCrossesNoGoZone(nodes[u].x, nodes[u].y, nodes[v].x, nodes[v].y, zones)) continue
       const d = dist[u] + Math.hypot(nodes[u].x - nodes[v].x, nodes[u].y - nodes[v].y)
       if (d < dist[v]) {
         dist[v] = d
@@ -173,22 +170,14 @@ export function routedDistance(
   return d
 }
 
-export function distBetweenPoints(
-  a: BedPoint,
-  b: BedPoint,
-  zones: NoGoZone[]
-): number {
+export function distBetweenPoints(a: BedPoint, b: BedPoint, zones: NoGoZone[]): number {
   if (zones.length === 0) {
     return Math.hypot(b.x - a.x, b.y - a.y)
   }
   return routedDistance(a.x, a.y, b.x, b.y, zones)
 }
 
-export function distSquaredBetweenPoints(
-  a: BedPoint,
-  b: BedPoint,
-  zones: NoGoZone[]
-): number {
+export function distSquaredBetweenPoints(a: BedPoint, b: BedPoint, zones: NoGoZone[]): number {
   const d = distBetweenPoints(a, b, zones)
   return d * d
 }

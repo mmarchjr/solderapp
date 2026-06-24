@@ -119,7 +119,11 @@ app.whenReady().then(() => {
   )
   mainWindow.webContents.session.setPermissionCheckHandler(
     (_webContents, permission, _requestingOrigin, details) => {
-      if (permission === 'serial' && (details.securityOrigin === 'file:///' || details.securityOrigin?.startsWith('http://localhost'))) {
+      if (
+        permission === 'serial' &&
+        (details.securityOrigin === 'file:///' ||
+          details.securityOrigin?.startsWith('http://localhost'))
+      ) {
         return true
       }
       return false
@@ -127,7 +131,10 @@ app.whenReady().then(() => {
   )
 
   mainWindow.webContents.session.setDevicePermissionHandler((details) => {
-    if (details.deviceType === 'serial' && (details.origin === 'file://' || details.origin.startsWith('http://localhost'))) {
+    if (
+      details.deviceType === 'serial' &&
+      (details.origin === 'file://' || details.origin.startsWith('http://localhost'))
+    ) {
       return true
     }
     return false

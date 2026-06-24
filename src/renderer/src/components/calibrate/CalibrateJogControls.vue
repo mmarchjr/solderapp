@@ -59,11 +59,7 @@ function cancel() {
 
     <!-- Jog controls -->
     <div class="d-flex justify-content-center gap-3 mb-3">
-      <JogWheel
-        :step-size="jogStep"
-        :disabled="disabled"
-        @jog="handleJogXY"
-      />
+      <JogWheel :step-size="jogStep" :disabled="disabled" @jog="handleJogXY" />
       <JogBar
         :step-size="jogStep"
         :current-z="printerPosition.z"
@@ -122,7 +118,12 @@ function cancel() {
 }
 
 @keyframes gcode-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 </style>

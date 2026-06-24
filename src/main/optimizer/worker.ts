@@ -19,7 +19,13 @@ port.on('message', async (payload: WorkerPayload) => {
   const { points, pcb, allZones, leftMoveConfig, clusterConfig } = payload
 
   if (points.length === 0) {
-    port!.postMessage({ type: 'done', bestPath: [], bestCost: 0, layersExplored: 0, cancelled: false })
+    port!.postMessage({
+      type: 'done',
+      bestPath: [],
+      bestCost: 0,
+      layersExplored: 0,
+      cancelled: false
+    })
     return
   }
 
@@ -29,7 +35,10 @@ port.on('message', async (payload: WorkerPayload) => {
   port!.on('message', (msg: { type: string }) => {
     if (msg.type === 'pause') paused = true
     else if (msg.type === 'resume') paused = false
-    else if (msg.type === 'cancel') { cancelled = true; paused = false }
+    else if (msg.type === 'cancel') {
+      cancelled = true
+      paused = false
+    }
   })
 
   const sendUpdate = (data: Record<string, unknown>) => {
@@ -130,7 +139,7 @@ port.on('message', async (payload: WorkerPayload) => {
     depth: number,
     topClusterIdx: number,
     color: string
-  ): Promise<{ path: number[], cost: number }> {
+  ): Promise<{ path: number[]; cost: number }> {
     if (cancelled) return { path: [], cost: 0 }
 
     while (paused) {
@@ -166,7 +175,14 @@ port.on('message', async (payload: WorkerPayload) => {
         isCancelled: () => cancelled
       }
 
-      const result = await bfsOptimize(pts, pcb, clusterStartId, allZones, leftMoveConfig, leafCallbacks)
+      const result = await bfsOptimize(
+        pts,
+        pcb,
+        clusterStartId,
+        allZones,
+        leftMoveConfig,
+        leafCallbacks
+      )
       totalLayersExplored += result.layersExplored
 
       if (result.bestPath.length > 0) {
@@ -178,7 +194,7 @@ port.on('message', async (payload: WorkerPayload) => {
 
     const clusters = clusterPoints(pts, pcb, clusterConfig)
 
-    const childResults: { path: number[], cost: number, centroid: BedPoint }[] = []
+    const childResults: { path: number[]; cost: number; centroid: BedPoint }[] = []
 
     for (const cluster of clusters) {
       if (cancelled) break
@@ -234,9 +250,8 @@ port.on('message', async (payload: WorkerPayload) => {
       if (cancelled) break
       if (child.path.length === 0) continue
 
-      const connectionCost = mergedPath.length > 0
-        ? calculateConnectionCost(mergedPath, child.path, points, pcb)
-        : 0
+      const connectionCost =
+        mergedPath.length > 0 ? calculateConnectionCost(mergedPath, child.path, points, pcb) : 0
 
       for (const id of child.path) {
         if (!mergedPath.includes(id)) {
@@ -283,9 +298,10 @@ port.on('message', async (payload: WorkerPayload) => {
     const child = await optimizeRecursive(topCluster.points, 1, ci, color)
 
     if (child.path.length > 0) {
-      const connectionCost = mergedBestPath.length > 0
-        ? calculateConnectionCost(mergedBestPath, child.path, points, pcb)
-        : 0
+      const connectionCost =
+        mergedBestPath.length > 0
+          ? calculateConnectionCost(mergedBestPath, child.path, points, pcb)
+          : 0
 
       for (const id of child.path) {
         if (!mergedBestPath.includes(id)) {
@@ -392,7 +408,10 @@ function nearestNeighborOrder(centroids: BedPoint[], startIdx: number): number[]
     let nearestDist = Infinity
     for (let j = 0; j < n; j++) {
       if (visited.has(j)) continue
-      const d = Math.hypot(centroids[j].x - centroids[current].x, centroids[j].y - centroids[current].y)
+      const d = Math.hypot(
+        centroids[j].x - centroids[current].x,
+        centroids[j].y - centroids[current].y
+      )
       if (d < nearestDist) {
         nearestDist = d
         nearest = j

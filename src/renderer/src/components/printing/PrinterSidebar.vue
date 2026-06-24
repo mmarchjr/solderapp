@@ -219,7 +219,9 @@ onUnmounted(() => {
         </div>
         <button
           class="btn btn-sm btn-outline-primary w-100 mt-2"
-          :disabled="!printer.connected || printer.printing || printer.isHoming || printer.isHomeCoolingDown"
+          :disabled="
+            !printer.connected || printer.printing || printer.isHoming || printer.isHomeCoolingDown
+          "
           @click="handleHome"
         >
           <i class="fa-solid fa-house me-1"></i> Home All Axes
@@ -272,9 +274,7 @@ onUnmounted(() => {
           />
         </div>
         <div class="fan-control mt-2">
-          <label class="form-label text-muted small mb-1">
-            Fan: {{ fanPercent }}%
-          </label>
+          <label class="form-label text-muted small mb-1"> Fan: {{ fanPercent }}% </label>
           <div class="d-flex align-items-center gap-2">
             <input
               v-model.number="fanPercent"
@@ -351,7 +351,11 @@ onUnmounted(() => {
         <div class="modal-dialog modal-dialog-centered" style="max-width: 400px; margin: 2rem">
           <div
             class="modal-content"
-            style="background: #fff; border-radius: 0.5rem; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3)"
+            style="
+              background: #fff;
+              border-radius: 0.5rem;
+              box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+            "
           >
             <div class="modal-header border-danger" style="padding: 1.25rem 1.5rem">
               <h5 class="modal-title text-danger">
@@ -446,5 +450,4 @@ onUnmounted(() => {
 .print-button-section {
   border-bottom: none;
 }
-
 </style>

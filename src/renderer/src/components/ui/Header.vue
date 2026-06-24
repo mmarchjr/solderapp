@@ -90,13 +90,22 @@
             <span v-if="printer.connected" class="badge bg-success-subtle text-success">
               {{ printer.homed ? 'Homed' : 'Not Homed' }}
             </span>
-            <span v-if="printer.connected && printer.printing" class="badge bg-dark-subtle text-dark">
-              {{ printer.currentPoint }}/{{ printer.totalPoints }} | {{ formatTime(printer.elapsed) }}
+            <span
+              v-if="printer.connected && printer.printing"
+              class="badge bg-dark-subtle text-dark"
+            >
+              {{ printer.currentPoint }}/{{ printer.totalPoints }} |
+              {{ formatTime(printer.elapsed) }}
             </span>
           </div>
           <button
             class="btn btn-sm btn-outline-primary"
-            :disabled="!printer.connected || printer.printing || printer.isHoming || printer.isHomeCoolingDown"
+            :disabled="
+              !printer.connected ||
+              printer.printing ||
+              printer.isHoming ||
+              printer.isHomeCoolingDown
+            "
             @click="printerCtrl.home()"
           >
             <i class="fa-solid fa-house me-1"></i> Home

@@ -1,4 +1,11 @@
-import { Point, BedPoint, NoGoZone, PcbConfig, drillToBedSpace, distBetweenPoints } from './distance'
+import {
+  Point,
+  BedPoint,
+  NoGoZone,
+  PcbConfig,
+  drillToBedSpace,
+  distBetweenPoints
+} from './distance'
 
 export interface BfsResult {
   bestPath: number[]

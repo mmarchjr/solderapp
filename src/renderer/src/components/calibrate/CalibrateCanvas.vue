@@ -90,7 +90,10 @@ function drawDrillHoles(context, pcb) {
       y = -d.y
     const r = holeDiameter / 2 || 2
 
-    const isSelected = props.selectedPad && props.selectedPad.drill.id === d.id && props.selectedPad.pcb.id === pcb.id
+    const isSelected =
+      props.selectedPad &&
+      props.selectedPad.drill.id === d.id &&
+      props.selectedPad.pcb.id === pcb.id
     const colorKey = Math.round(holeDiameter * 1000) / 1000
     const color = props.padColorMap[colorKey]
 

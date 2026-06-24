@@ -643,11 +643,20 @@ onBeforeUnmount(() => {
                 >
                   <i class="fa-solid fa-layer-group me-1"></i>
                   Clustering Settings
-                  <i class="fa-solid fa-chevron-down ms-1" :class="{ 'fa-rotate-180': showClusteringSettings }"></i>
+                  <i
+                    class="fa-solid fa-chevron-down ms-1"
+                    :class="{ 'fa-rotate-180': showClusteringSettings }"
+                  ></i>
                 </button>
 
-                <div v-if="showClusteringSettings" class="clustering-settings mt-2 p-3 border rounded">
-                  <label class="form-label" title="Target number of points per cluster when auto-clustering is enabled (>15 points)">
+                <div
+                  v-if="showClusteringSettings"
+                  class="clustering-settings mt-2 p-3 border rounded"
+                >
+                  <label
+                    class="form-label"
+                    title="Target number of points per cluster when auto-clustering is enabled (>15 points)"
+                  >
                     Target Points Per Cluster
                   </label>
                   <input
@@ -659,10 +668,14 @@ onBeforeUnmount(() => {
                     max="50"
                   />
                   <div class="form-text">
-                    Boards with more than 15 solder points are auto-clustered. This controls the target group size.
+                    Boards with more than 15 solder points are auto-clustered. This controls the
+                    target group size.
                   </div>
 
-                  <label class="form-label mt-3" title="Hard limit on points per cluster. Oversized clusters are split further.">
+                  <label
+                    class="form-label mt-3"
+                    title="Hard limit on points per cluster. Oversized clusters are split further."
+                  >
                     Max Points Per Cluster
                   </label>
                   <input
@@ -677,7 +690,10 @@ onBeforeUnmount(() => {
                     Clusters exceeding this size are automatically split into smaller sub-clusters.
                   </div>
 
-                  <label class="form-label mt-3" title="Distance threshold for sharing points between adjacent clusters">
+                  <label
+                    class="form-label mt-3"
+                    title="Distance threshold for sharing points between adjacent clusters"
+                  >
                     Soft Boundary Distance (mm)
                   </label>
                   <input
@@ -688,7 +704,8 @@ onBeforeUnmount(() => {
                     min="0"
                   />
                   <div class="form-text">
-                    Points within this distance of an adjacent cluster are included in both clusters' optimization.
+                    Points within this distance of an adjacent cluster are included in both
+                    clusters' optimization.
                   </div>
                 </div>
               </div>
@@ -780,7 +797,9 @@ onBeforeUnmount(() => {
                 <h5><i class="fa-solid fa-bullseye"></i> Calibration G-code</h5>
                 <p class="text-muted small">
                   G-code executed before/after feed and offset calibration in the Calibrate tab.
-                  Feed Before variables: <code>{SAFE_Z}</code>, <code>{X}</code>, <code>{Y}</code>, <code>{Z_OFFSET}</code>, <code>{SOLDER_PRIME_Z}</code>, <code>{PRIME}</code>, <code>{PRIME_RETRACT}</code>, <code>{SOLDER_OFFSET}</code>, <code>{SOAK}</code>.
+                  Feed Before variables: <code>{SAFE_Z}</code>, <code>{X}</code>, <code>{Y}</code>,
+                  <code>{Z_OFFSET}</code>, <code>{SOLDER_PRIME_Z}</code>, <code>{PRIME}</code>,
+                  <code>{PRIME_RETRACT}</code>, <code>{SOLDER_OFFSET}</code>, <code>{SOAK}</code>.
                   After/Offset variables: <code>{SAFE_Z}</code>, <code>{RETRACT}</code>.
                 </p>
               </div>
@@ -893,7 +912,9 @@ onBeforeUnmount(() => {
                             class="form-control form-control-sm"
                             :value="row.dwell"
                             step="0.1"
-                            @change="updateLagrangeCell(index, 'dwell', $event.target.valueAsNumber)"
+                            @change="
+                              updateLagrangeCell(index, 'dwell', $event.target.valueAsNumber)
+                            "
                           />
                         </td>
                       </tr>
@@ -910,7 +931,10 @@ onBeforeUnmount(() => {
                 <button
                   type="button"
                   class="dropdown-item"
-                  @click="addLagrangeRowBelow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
+                  @click="
+                    addLagrangeRowBelow(lagrangeContextMenu.rowIndex)
+                    hideLagrangeContextMenu()
+                  "
                 >
                   <i class="fa-solid fa-plus me-2"></i>Add Row Below
                 </button>
@@ -918,7 +942,10 @@ onBeforeUnmount(() => {
                   type="button"
                   class="dropdown-item text-danger"
                   :disabled="lagrangeRows.length <= 1"
-                  @click="deleteLagrangeRow(lagrangeContextMenu.rowIndex); hideLagrangeContextMenu()"
+                  @click="
+                    deleteLagrangeRow(lagrangeContextMenu.rowIndex)
+                    hideLagrangeContextMenu()
+                  "
                 >
                   <i class="fa-solid fa-trash me-2"></i>Delete Row
                 </button>
