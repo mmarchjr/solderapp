@@ -35,7 +35,7 @@
     "pinia": "^3.0.1",
     "pinia-plugin-persistedstate": "^4.2.0",
     "serialport": "^13.0.0",
-    "three": "^0.184.0",
+    "three": "^0.185.0",
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
